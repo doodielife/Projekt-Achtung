@@ -12,7 +12,7 @@ export class GameOver extends Scene
         this.cameras.main.setBackgroundColor(0x000000);
 
       
-        this.add.text(512, 384, 'Koniec gry', {
+        this.add.text(512, 384, 'Koniec gry \n Kliknij aby rozpocząc ponownie', {
             fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
             stroke: '#000000', strokeThickness: 8,
             align: 'center'
@@ -20,7 +20,7 @@ export class GameOver extends Scene
 
         this.input.once('pointerdown', () => {
 
-            this.scene.start('MainMenu');
+            this.scene.start('Game');
 
         });
     }

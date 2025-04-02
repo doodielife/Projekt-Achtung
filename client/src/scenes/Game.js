@@ -12,7 +12,6 @@ export class Game extends Scene
 
     create ()
     {
-        
         this.cameras.main.setBackgroundColor(0x000000);
         this.player = this.add.rectangle(400, 300, 5, 5, 0xff0000);
         this.physics.add.existing(this.player);
@@ -60,6 +59,7 @@ export class Game extends Scene
     
         if (this.player.x < 0 || this.player.x > sceneWidth || 
             this.player.y < 0 || this.player.y > sceneHeight) {
+            this.trail = []
             this.scene.start('GameOver');
         }
     }

@@ -50,7 +50,8 @@ export class Game extends Scene
         this.updatePositionText();
         this.addTrailPoint();
         this.drawTrail();
-        this.checkBoundaries()
+        this.checkBoundaries();
+        this.checkPlayerCollisionWithOwnTrail();
     }
 
     checkBoundaries() {
@@ -101,6 +102,18 @@ drawTrail() {
             this.trail[lastIndex].x,
             this.trail[lastIndex].y
         );
+    }
+}
+
+checkPlayerCollisionWithOwnTrail() {
+    for (let i = 0; i < this.trail.length - 100; i++) { // Pomijamy 100 pierwszych punktów żeby gracz nie umeirał od razu
+        let trailPoint = this.trail[i];
+        let distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, trailPoint.x, trailPoint.y);
+        
+        if (distance < 5) { 
+            this.scene.start('GameOver');
+            this.trail = [];
+        }
     }
 }
 

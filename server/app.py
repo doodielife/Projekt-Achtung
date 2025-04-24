@@ -18,21 +18,22 @@ connected_clients = {}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
+    await websocket.accept()    
     player_id = id(websocket)
     connected_clients[player_id] = websocket
 
     # Po połączeniu, wysyłamy do gracza listę aktywnych graczy
     await send_active_players_to_all()
-
+    await websocket.send_json({"player_id": player_id,"type":"player_id"})
     try:
         while True:
-            data = await websocket.receive_text()
+            data = await websocket.receive_text()  # Dodajemy ID gracza do wiadomości
             movement = json.loads(data)
             # Przekazywanie wiadomości do wszystkich innych graczy
             for pid, client in connected_clients.items():
                 if pid != player_id:
-                    await client.send_text(data)
+                    movement.update({"type":"movement","player_id": player_id})
+                    await client.send_text(json.dumps(movement))
     except WebSocketDisconnect:
         # Gracz się rozłączył - usuwamy go z listy
         del connected_clients[player_id]
@@ -46,6 +47,6 @@ async def send_active_players_to_all():
     for pid, client in connected_clients.items():
         try:
             # Wysyłamy listę aktywnych graczy w formacie JSON
-            await client.send_text(json.dumps({"active_players": active_players}))
+            await client.send_text(json.dumps({"active_players": active_players,"type":"active_players"}))
         except WebSocketDisconnect:
             continue

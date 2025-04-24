@@ -6,14 +6,50 @@ export class Game extends Scene
     graphics;
     player;
     otherPlayers = [];
+    socket;
     constructor ()
     {
         super('Game');
+        this.socket = new WebSocket("ws://localhost:8000/ws");
+
     }
 
     create ()
     {
         this.cameras.main.setBackgroundColor(0x000000);
+       
+
+        this.input.once('pointerdown', () => {
+            this.scene.start('GameOver');
+        });
+
+        this.cursors = this.input.keyboard.createCursorKeys();
+
+        // Połączenie z WebSocket
+
+        this.socket.onopen = () => {
+            console.log("Połączono z serwerem WebSocket");
+        };
+
+        this.socket.onmessage = (event) => {
+            const gameState = JSON.parse(event.data);
+            switch (gameState.type) {
+                case 'active_players':
+                    console.log("Liczba aktywnych graczy: " + gameState.active_players.length);
+                    this.otherPlayers = gameState.active_players;
+                    break;
+                case 'player_id':
+                    console.log("Twój ID: " + gameState.player_id);
+                    this.player.id = gameState.player_id;
+                    break;
+                case 'movement':
+                    console.log(gameState);
+                    this.updateOtherPlayer(gameState);
+                    break;
+            }
+            // this.updateOtherPlayers(gameState);
+        };
+
         this.player = this.add.rectangle(400, 300, 5, 5, 0xff0000);
         this.physics.add.existing(this.player);
 
@@ -28,24 +64,6 @@ export class Game extends Scene
             strokeThickness: 8,
             align: 'center'
         }).setOrigin(0.5);
-
-        this.input.once('pointerdown', () => {
-            this.scene.start('GameOver');
-        });
-
-        this.cursors = this.input.keyboard.createCursorKeys();
-
-        // Połączenie z WebSocket
-        this.socket = new WebSocket("ws://localhost:8000/ws");
-
-        this.socket.onopen = () => {
-            console.log("Połączono z serwerem WebSocket");
-        };
-
-        this.socket.onmessage = (event) => {
-            const gameState = JSON.parse(event.data);
-            this.updateOtherPlayers(gameState.players);
-        };
 
         const borderGraphics = this.add.graphics();
         borderGraphics.lineStyle(2, 0xffffff, 1);
@@ -65,7 +83,7 @@ export class Game extends Scene
         this.drawTrail();
         this.checkBoundaries();
         this.checkPlayerCollisionWithOwnTrail();
-        this.drawOtherPlayersTrails();
+        this.sendPlayerMovement({ x: this.player.x, y: this.player.y, player_id: this.player.id }); //Jezeli bedzie za czesto utworzyć interval w create
     }
 
     checkBoundaries() {
@@ -82,11 +100,9 @@ export class Game extends Scene
 handlePlayerControls() {
     if (this.cursors.left.isDown) {
         this.player.body.rotation -= 1.5;
-        sendPlayerMovement({ direction: 'left', x: this.player.x, y: this.player.y });
     }
     if (this.cursors.right.isDown) {
         this.player.body.rotation += 1.5;
-        sendPlayerMovement({ direction: 'right', x: this.player.x, y: this.player.y });
     }
 }
 
@@ -100,26 +116,15 @@ updatePlayerMovement() {
     this.player.body.setVelocity(velocityX, velocityY);
 }
 
-updateOtherPlayers(players) {
-    players.forEach(playerData => {
-        // Sprawdź, czy gracz już istnieje
-        let player = this.otherPlayers.find(p => p.id === playerData.id);
-
-        if (player) {
-            // Zaktualizuj pozycję gracza
-            player.setPosition(playerData.x, playerData.y);
-
-            // Zaktualizuj jego trail
-            player.trail.push({ x: playerData.x, y: playerData.y });
-
-        } else {
-            // Jeśli gracza nie ma, dodaj go do gry
-            player = this.add.rectangle(playerData.x, playerData.y, 5, 5, 0x00ff00);
-            player.id = playerData.id;
-            player.trail = [{ x: playerData.x, y: playerData.y }];  // Pierwszy punkt traila
-            this.otherPlayers.push(player);
-        }
-    });
+updateOtherPlayer(data){
+    const findPlayer = this.otherPlayers.find(p=> p === data.player_id)
+    if(findPlayer){
+         this.add.rectangle(data.x, data.y, 5, 5, 0xffa500);
+    }else{
+        console.log("Nie znalazłem gracza: ", data.player_id);
+        console.log("Dodaję gracza: ", data.player_id);
+        this.otherPlayers.push(data.player_id);
+    }
 }
 
 

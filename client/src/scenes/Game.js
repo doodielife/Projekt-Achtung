@@ -56,14 +56,15 @@ export class Game extends Scene
         this.graphics = this.add.graphics();
         this.graphics.lineStyle(2, 0xff0000, 1);
 
-        this.text = this.add.text(512, 38, "Ładowanie pozycji..", {
-            fontFamily: 'Arial Black',
-            fontSize: 38,
-            color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 8,
-            align: 'center'
-        }).setOrigin(0.5);
+        //Kod odpowiedzialny za wyswietlanie pozycji gracza
+        // this.text = this.add.text(512, 38, "Ładowanie pozycji..", {
+        //     fontFamily: 'Arial Black',
+        //     fontSize: 38,
+        //     color: '#ffffff',
+        //     stroke: '#000000',
+        //     strokeThickness: 8,
+        //     align: 'center'
+        // }).setOrigin(0.5);
 
         const borderGraphics = this.add.graphics();
         borderGraphics.lineStyle(2, 0xffffff, 1);
@@ -78,7 +79,8 @@ export class Game extends Scene
     {
         this.handlePlayerControls();
         this.updatePlayerMovement();
-        this.updatePositionText();
+        //wyswietlanie pozycji gracza
+        // this.updatePositionText();
         this.addTrailPoint();
         this.drawTrail();
         this.checkBoundaries();

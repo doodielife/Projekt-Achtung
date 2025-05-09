@@ -3,7 +3,7 @@ const username = urlParams.get('username');
 const socket = new WebSocket('ws://localhost:8000/chat');
 
 if (!username) {
-    alert('Nie podano nazwy uzytkownika. Uzyj parametru ?username=twoja_nazwa w URL.');
+    alert('Nie podano nazwy uzytkownika! Zostaniesz przekierowany do strony logowania.');
     window.location.href = '/login.html';
 }
 

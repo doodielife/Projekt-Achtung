@@ -2,6 +2,11 @@ const urlParams = new URLSearchParams(window.location.search);
 const username = urlParams.get('username');
 const socket = new WebSocket('ws://localhost:8000/chat');
 
+if (!username) {
+    alert('Nie podano nazwy uzytkownika. Uzyj parametru ?username=twoja_nazwa w URL.');
+    window.location.href = '/login.html';
+}
+
 const chatContainer = document.getElementById('chat');
 
 chatContainer.innerHTML = `

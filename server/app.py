@@ -15,6 +15,22 @@ app.add_middleware(
 # Przechowuje aktywnych graczy (połączenia WebSocket)
 connected_clients = {}
 
+@app.websocket("/chat")
+async def websocket_chat_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    player_id = id(websocket)
+    connected_clients[player_id] = websocket
+    try:
+        while True:
+            data = await websocket.receive_text()
+            print(f"Odebrano wiadomosc {player_id}: {data}")
+            for pid, client in connected_clients.items():
+                if pid != player_id:
+                    print(f"Przekazano wiadomosc do {pid}: {data}")
+                    await client.send_text(json.dumps(data))
+    except WebSocketDisconnect:
+        del connected_clients[player_id]
+        await send_active_players_to_all()
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

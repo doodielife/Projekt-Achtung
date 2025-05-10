@@ -9,6 +9,10 @@ export class Game extends Scene
     socket;                      // Połączenie WebSocket
     otherPlayersTrails = {};
     gameIsOn = true;
+    start = false;
+    countdownText; // tekst odliczania
+    countdownStarted = false;
+
 
 
 
@@ -101,6 +105,10 @@ export class Game extends Scene
         const sceneHeight = this.cameras.main.height;
         borderGraphics.strokeRect(0, 0, sceneWidth, sceneHeight);
 
+    this.countdownText = this.add.text(400, 300, '', {
+    fontSize: '64px',
+    color: '#ffffff'
+    }).setOrigin(0.5);
 
 
     }
@@ -113,7 +121,11 @@ export class Game extends Scene
     update()
     {
         // Główna pętla gry – wykonuje się co klatkę
-       // if(this.gameIsOn){
+        if(this.start){
+
+        // Start odliczania, ale tylko jeśli są 2 gracze
+        this.startCountdownIfReady();
+
         this.handlePlayerControls();                     // Obsługa ruchu gracza (obrót)
         this.updatePlayerMovement();                     // Aktualizacja prędkości gracza
 //        this.updatePositionText();                       // Odświeżenie tekstu z pozycją
@@ -121,13 +133,16 @@ export class Game extends Scene
         this.drawTrail();                                // Rysowanie śladu
         this.checkBoundaries();                          // Sprawdzenie czy gracz wyszedł poza ekran
         this.checkPlayerCollisionWithOwnTrail();         // Sprawdzenie kolizji ze swoim śladem
+
+ }
         this.sendPlayerMovement({                        // Wysłanie pozycji do serwera
             x: this.player.x,
             y: this.player.y,
             player_id: this.player.id
         });
-//}
+        this.checkPlayersNumber();
         this.checkPlayerCollisionWithOtherTrails();
+
 
     }
 
@@ -226,17 +241,19 @@ export class Game extends Scene
         this.text.text = `${this.player.x.toFixed()} : ${this.player.y.toFixed()}`;
     }
 
+//    checkPlayersNumber(){
+//        //Sprawdzanie ilu jest graczy
+//        if(this.otherPlayers.length === 2){
+//        this.start = true;
+//        }
+//    }
 
-
-
-
-
-
-
-
-
-
-
+checkPlayersNumber() {
+    if (this.otherPlayers.length === 2 && !this.countdownStarted) {
+        this.countdownStarted = true;
+        this.startCountdownIfReady();
+    }
+}
 
 
 
@@ -293,7 +310,33 @@ export class Game extends Scene
             }
         }
     }
-
-
     }
+
+
+
+
+startCountdownIfReady() {
+    if (this.otherPlayers.length === 2) {
+        let countdown = 3;
+
+        this.countdownText.setText(countdown);
+
+        const countdownTimer = this.time.addEvent({
+            delay: 1000,
+            repeat: 2, // 3 sekundy (0, 1, 2)
+            callback: () => {
+                countdown--;
+                if (countdown > 0) {
+                    this.countdownText.setText(countdown);
+                } else {
+                    this.countdownText.setText("START!");
+                    this.time.delayedCall(1000, () => {
+                        this.countdownText.setVisible(false);
+                        this.start = true;
+                    });
+                }
+            }
+        });
+    }
+}
 }

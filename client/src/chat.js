@@ -10,7 +10,8 @@ if (!username) {
 const chatContainer = document.getElementById('chat');
 
 chatContainer.innerHTML = `
-            <div class="username" id="username">Wiadomosci</div>
+            <div class="chat-header" id="username">Wiadomosci</div>
+            <span class="chat-close-btn" id="chat-close"></span>
             <div class="chat-messages" id="chat-messages"></div>
             <div class="chat-input-container">
                 <input type="text" id="chat-input" placeholder="Napisz wiadomosc" />
@@ -20,6 +21,11 @@ chatContainer.innerHTML = `
 
 const sendButton = document.getElementById('send-button');
 const chatInput = document.getElementById('chat-input');
+const chatClose = document.getElementById('chat-close');
+
+
+
+
 sendButton.addEventListener('click', () => {
     const message = chatInput.value;
     if (message.trim() !== '') {
@@ -50,6 +56,11 @@ socket.onmessage = (event) => {
     chatMessages.appendChild(newMessage);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
+
+chatClose.addEventListener('click', () => {
+    const chatContainer = document.getElementById('chat');
+    chatContainer.classList.toggle('chat-closed');
+});
 
 console.log("Poprawnie wczytano chat.js");
 console.log("Nazwa uzytkownika: " + username);

@@ -117,6 +117,7 @@ input[type="text"]:focus {
 
 .chat-container {
     display: flex;
+    position: relative;
     flex-direction: column;
     justify-content: center;
     align-items: center;
@@ -125,6 +126,52 @@ input[type="text"]:focus {
     padding: 1rem;
     background-color: rgba(30, 29, 29, 0.791);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+    transform: translateX(0%);
+    transition: transform 1s ease-in-out;
+}
+
+.chat-closed {
+     transform: translateX(85%);
+     transition: transform 1s ease-in-out;
+}
+
+
+.chat-closed .chat-close-btn {
+    transform: rotate(180deg);
+}
+
+.chat-closed .chat-header {
+    visibility: hidden;
+    opacity: 0 ;
+    transition: 0.9s ease;
+}
+
+.chat-closed .chat-messages{
+    visibility: hidden;
+    opacity: 0 ;
+    transition: 0.9s ease;
+}
+.chat-closed .chat-input-container{
+    visibility: hidden;
+    opacity: 0 ;
+    transition: 0.9s ease;
+}
+
+.chat-close-btn{
+    position: absolute;
+    display: inline-block;
+    top: 1rem;
+    left: 1rem;
+    height: 32px;
+    width: 32px;
+    background-color: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    background-image: url('chat-close-btn.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    transition: 1s ease;
 }
 
 .chat-input-container {
@@ -134,7 +181,10 @@ input[type="text"]:focus {
     align-items: center;
     width: 100%;
     gap: 0.5rem;
+    opacity: 1;
+    transition: 0.9s ease;
 }
+
 
 .send-button {
     width: 100%;
@@ -149,4 +199,24 @@ input[type="text"]:focus {
     font-size: 1.2rem;
     cursor: pointer;
     transition: 0.15s ease;
+}
+
+
+@media screen and (max-width: 768px) {
+    .chat-container {
+        display: none;
+    }
+    .chat-input-container {
+        width: 100%;
+    }
+    .form-group {
+        width: 100%;
+    }
+    .login-header {
+        font-size: 3rem;
+    }
+    .form-submit {
+        width: 100%;
+    }
+    
 }

@@ -2,91 +2,141 @@ import { Scene } from 'phaser';
 
 export class Game extends Scene
 {
-    trail = [];
-    graphics;
-    player;
-    otherPlayers = [];
-    socket;
+    trail = [];                  // Lista punktów śladu gracza
+    graphics;                    // Obiekt do rysowania śladów
+    player;                      // Obiekt gracza (prostokąt)
+    otherPlayers = [];          // Lista ID innych graczy
+    socket;                      // Połączenie WebSocket
+    otherPlayersTrails = {};
+    gameIsOn = true;
+
+
+
+
+
     constructor ()
     {
         super('Game');
-        this.socket = new WebSocket("ws://localhost:8000/ws");
-
+        this.socket = new WebSocket("ws://localhost:8000/ws"); // Inicjalizacja WebSocket
+         this.otherPlayersTrails = {};  // resetuj
+        this.trail = [];
+        this.otherPlayers = [];
     }
+
+
+
+
+
+
 
     create ()
     {
+        // Ustawienie koloru tła
         this.cameras.main.setBackgroundColor(0x000000);
-       
 
-        this.input.once('pointerdown', () => {
-            this.scene.start('GameOver');
-        });
+        // Obsługa kliknięcia myszą – restart gry
+//        this.input.once('pointerdown', () => {
+//            this.scene.start('GameOver');
+//        });
 
+        // Obsługa klawiatury – strzałki
         this.cursors = this.input.keyboard.createCursorKeys();
 
-        // Połączenie z WebSocket
-
+        // Obsługa połączenia WebSocket
         this.socket.onopen = () => {
             console.log("Połączono z serwerem WebSocket");
         };
 
+        // Obsługa wiadomości od serwera WebSocket
         this.socket.onmessage = (event) => {
             const gameState = JSON.parse(event.data);
             switch (gameState.type) {
                 case 'active_players':
+                    // Otrzymano listę aktywnych graczy
                     console.log("Liczba aktywnych graczy: " + gameState.active_players.length);
                     this.otherPlayers = gameState.active_players;
                     break;
                 case 'player_id':
+                    // Otrzymano unikalne ID gracza
                     console.log("Twój ID: " + gameState.player_id);
                     this.player.id = gameState.player_id;
                     break;
                 case 'movement':
+                    // Pozycja innego gracza
                     console.log(gameState);
                     this.updateOtherPlayer(gameState);
                     break;
             }
-            // this.updateOtherPlayers(gameState);
         };
 
-        this.player = this.add.rectangle(400, 300, 5, 5, 0xff0000);
-        this.physics.add.existing(this.player);
+        // Tworzenie obiektu gracza
+        const min = 100;
+        const max = 700;
+        const losowaLiczbaX = Math.floor(Math.random() * (max - min + 1)) + min;
+        const losowaLiczbaY = Math.floor(Math.random() * (max - min + 1)) + min;
 
+
+
+        this.player = this.add.rectangle(losowaLiczbaX, losowaLiczbaY, 5, 5, 0xff0000);
+        this.physics.add.existing(this.player); // Dodanie fizyki
+
+        // Obiekt graficzny do rysowania śladów
         this.graphics = this.add.graphics();
         this.graphics.lineStyle(2, 0xff0000, 1);
 
-        this.text = this.add.text(512, 38, "Ładowanie pozycji..", {
+        // Tekst z aktualną pozycją gracza
+/*        this.text = this.add.text(512, 38, "Ładowanie pozycji..", {
             fontFamily: 'Arial Black',
             fontSize: 38,
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 8,
             align: 'center'
-        }).setOrigin(0.5);
+        }).setOrigin(0.5);*/
 
+        // Rysowanie ramki gry
         const borderGraphics = this.add.graphics();
         borderGraphics.lineStyle(2, 0xffffff, 1);
-
         const sceneWidth = this.cameras.main.width;
         const sceneHeight = this.cameras.main.height;
-
         borderGraphics.strokeRect(0, 0, sceneWidth, sceneHeight);
+
+
+
     }
+
+
+
+
+
 
     update()
     {
-        this.handlePlayerControls();
-        this.updatePlayerMovement();
-        this.updatePositionText();
-        this.addTrailPoint();
-        this.drawTrail();
-        this.checkBoundaries();
-        this.checkPlayerCollisionWithOwnTrail();
-        this.sendPlayerMovement({ x: this.player.x, y: this.player.y, player_id: this.player.id }); //Jezeli bedzie za czesto utworzyć interval w create
+        // Główna pętla gry – wykonuje się co klatkę
+       // if(this.gameIsOn){
+        this.handlePlayerControls();                     // Obsługa ruchu gracza (obrót)
+        this.updatePlayerMovement();                     // Aktualizacja prędkości gracza
+//        this.updatePositionText();                       // Odświeżenie tekstu z pozycją
+        this.addTrailPoint();                            // Dodanie punktu śladu
+        this.drawTrail();                                // Rysowanie śladu
+        this.checkBoundaries();                          // Sprawdzenie czy gracz wyszedł poza ekran
+        this.checkPlayerCollisionWithOwnTrail();         // Sprawdzenie kolizji ze swoim śladem
+        this.sendPlayerMovement({                        // Wysłanie pozycji do serwera
+            x: this.player.x,
+            y: this.player.y,
+            player_id: this.player.id
+        });
+//}
+        this.checkPlayerCollisionWithOtherTrails();
+
     }
 
+
+
+
+
     checkBoundaries() {
+        // Jeżeli gracz wyjdzie poza ekran, restart gry
         const sceneWidth = this.cameras.main.width;
         const sceneHeight = this.cameras.main.height;
 
@@ -97,81 +147,153 @@ export class Game extends Scene
         }
     }
 
-handlePlayerControls() {
-    if (this.cursors.left.isDown) {
-        this.player.body.rotation -= 1.5;
-    }
-    if (this.cursors.right.isDown) {
-        this.player.body.rotation += 1.5;
-    }
-}
-
-sendPlayerMovement(movement) {
-        this.socket.send(JSON.stringify(movement));
-    }
-
-updatePlayerMovement() {
-    let velocityX = Math.cos(this.player.rotation) * 100;
-    let velocityY = Math.sin(this.player.rotation) * 100;
-    this.player.body.setVelocity(velocityX, velocityY);
-}
-
-updateOtherPlayer(data){
-    const findPlayer = this.otherPlayers.find(p=> p === data.player_id)
-    if(findPlayer){
-         this.add.rectangle(data.x, data.y, 5, 5, 0xffa500);
-    }else{
-        console.log("Nie znalazłem gracza: ", data.player_id);
-        console.log("Dodaję gracza: ", data.player_id);
-        this.otherPlayers.push(data.player_id);
-    }
-}
-
-
-
-updatePositionText() {
-    this.text.text = `${this.player.x.toFixed()} : ${this.player.y.toFixed()}`;
-}
-
-
-addTrailPoint() {
-    this.trail.push({ x: this.player.x, y: this.player.y });
-}
-
-
-drawTrail() {
-    this.graphics.lineStyle(5, 0xff0000, 1);
-    if (this.trail.length > 1) {
-        const lastIndex = this.trail.length - 1;
-        this.graphics.lineBetween(
-            this.trail[lastIndex - 1].x,
-            this.trail[lastIndex - 1].y,
-            this.trail[lastIndex].x,
-            this.trail[lastIndex].y
-        );
-    }
-}
-
-drawOtherPlayersTrails() {
-    this.otherPlayers.forEach(player => {
-        this.graphics.lineStyle(5, 0x00ff00, 1);  // Kolor trailu innych graczy (zielony)
-        for (let i = 1; i < player.trail.length; i++) {
-            this.graphics.lineBetween(player.trail[i-1].x, player.trail[i-1].y, player.trail[i].x, player.trail[i].y);
+    handlePlayerControls() {
+        // Obracanie gracza strzałkami
+        if (this.cursors.left.isDown) {
+            this.player.body.rotation -= 1.5;
         }
-    });
-}
-
-
-checkPlayerCollisionWithOwnTrail() {
-    for (let i = 0; i < this.trail.length - 100; i++) { // Pomijamy 100 pierwszych punktów żeby gracz nie umeirał od razu
-        let trailPoint = this.trail[i];
-        let distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, trailPoint.x, trailPoint.y);
-
-        if (distance < 5) {
-            this.scene.start('GameOver');
-            this.trail = [];
+        if (this.cursors.right.isDown) {
+            this.player.body.rotation += 1.5;
         }
     }
-}
 
+
+
+    sendPlayerMovement(movement) {
+         this.socket.send(JSON.stringify(movement));
+    }
+
+
+
+
+
+    updatePlayerMovement() {
+        // Obliczanie kierunku i prędkości ruchu gracza
+        let velocityX = Math.cos(this.player.rotation) * 100;
+        let velocityY = Math.sin(this.player.rotation) * 100;
+        this.player.body.setVelocity(velocityX, velocityY);
+    }
+
+
+
+
+    addTrailPoint() {
+        // Dodaj aktualną pozycję gracza do śladu
+        this.trail.push({ x: this.player.x, y: this.player.y });
+    }
+
+
+
+
+
+    drawTrail() {
+        // Rysuj linię między ostatnimi dwoma punktami śladu
+        this.graphics.lineStyle(5, 0xff0000, 1);
+        if (this.trail.length > 1) {
+            const lastIndex = this.trail.length - 1;
+            this.graphics.lineBetween(
+                this.trail[lastIndex - 1].x,
+                this.trail[lastIndex - 1].y,
+                this.trail[lastIndex].x,
+                this.trail[lastIndex].y
+            );
+        }
+    }
+
+
+      checkPlayerCollisionWithOwnTrail() {
+        // Sprawdzenie czy gracz nie dotknął własnego śladu
+        for (let i = 0; i < this.trail.length - 100; i++) {
+            let trailPoint = this.trail[i];
+            let distance = Phaser.Math.Distance.Between(
+                this.player.x, this.player.y, trailPoint.x, trailPoint.y
+            );
+
+            if (distance < 5) {
+                // Kolizja – restart gry
+                this.scene.start('GameOver');
+               // this.gameIsOn = false;
+                this.trail = [];
+            }
+        }
+    }
+
+
+
+
+    updatePositionText() {
+        // Aktualizacja tekstu pozycji gracza
+        this.text.text = `${this.player.x.toFixed()} : ${this.player.y.toFixed()}`;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    updateOtherPlayer(data) {
+        // Aktualizacja pozycji innych graczy
+        const findPlayer = this.otherPlayers.find(p => p === data.player_id);
+        if (findPlayer) {
+            // Rysowanie innego gracza na pozycji
+            this.add.rectangle(data.x, data.y, 5, 5, 0xffa500);
+            this.otherPlayersTrails[data.player_id].push({ x: data.x, y: data.y });
+        } else {
+            // Jeśli nowy gracz – dodaj go
+            console.log("Nie znalazłem gracza: ", data.player_id);
+            console.log("Dodaję gracza: ", data.player_id);
+
+            this.otherPlayers.push(data.player_id);
+            this.otherPlayersTrails[data.player_id] = [];
+            console.log(`Trail gracza ${data.player_id}:`, this.otherPlayersTrails[data.player_id]);
+        }
+    }
+
+
+//
+//    drawOtherPlayersTrails() {
+//        // Funkcja (nieużywana) do rysowania śladów innych graczy
+//        this.otherPlayers.forEach(player => {
+//            this.graphics.lineStyle(5, 0x00ff00, 1);
+//            for (let i = 1; i < player.trail.length; i++) {
+//                this.graphics.lineBetween(
+//                    player.trail[i - 1].x, player.trail[i - 1].y,
+//                    player.trail[i].x, player.trail[i].y
+//                );
+//            }
+//        });
+//    }
+
+
+    checkPlayerCollisionWithOtherTrails(){
+        for (const playerId in this.otherPlayersTrails) {
+        const trail = this.otherPlayersTrails[playerId];
+        for (let i = 0; i < trail.length; i++) {
+            let point = trail[i];
+            let distance = Phaser.Math.Distance.Between(
+                this.player.x, this.player.y, point.x, point.y
+            );
+
+            if (distance < 5) {
+                //Kolizja
+                this.scene.start('GameOver');
+                //this.gameIsOn = false;
+                this.trail = [];
+                return;
+            }
+        }
+    }
+
+
+    }
 }

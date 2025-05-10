@@ -2,3 +2,12 @@
 venv/
 node_modules/
 __pycache__/
+
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+.vscode/
+.vs

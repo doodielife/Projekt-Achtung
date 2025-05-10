@@ -155,6 +155,7 @@ input[type="text"]:focus {
     visibility: hidden;
     opacity: 0 ;
     transition: 0.9s ease;
+
 }
 
 .chat-close-btn{
@@ -168,6 +169,7 @@ input[type="text"]:focus {
     border: none;
     font-size: 1.5rem;
     cursor: pointer;
+    opacity: 0.8;
     background-image: url('chat-close-btn.svg');
     background-size: contain;
     background-repeat: no-repeat;

@@ -14,55 +14,50 @@ app.add_middleware(
 
 # Przechowuje aktywnych graczy (połączenia WebSocket)
 connected_clients = {}
-
-@app.websocket("/chat")
-async def websocket_chat_endpoint(websocket: WebSocket):
+async def websocket_handler(websocket: WebSocket, on_message):
     await websocket.accept()
     player_id = id(websocket)
     connected_clients[player_id] = websocket
+    await send_active_players_to_all()
+    await websocket.send_json({"player_id": player_id, "type": "player_id"})
+
     try:
         while True:
             data = await websocket.receive_text()
-            print(f"Odebrano wiadomosc {player_id}: {data}")
-            for pid, client in connected_clients.items():
-                if pid != player_id:
-                    print(f"Przekazano wiadomosc do {pid}: {data}")
-                    await client.send_text(json.dumps(data))
+            await on_message(player_id, data)
     except WebSocketDisconnect:
         del connected_clients[player_id]
         await send_active_players_to_all()
+
+async def broadcast_except_sender(sender_id, message):
+    for pid, client in connected_clients.items():
+        if pid != sender_id:
+            await client.send_text(message)
+
+async def chat_message_handler(sender_id, data):
+    print(f"Odebrano wiadomosc {sender_id}: {data}")
+    await broadcast_except_sender(sender_id, json.dumps(data))
+
+async def movement_message_handler(sender_id, data):
+    movement = json.loads(data)
+    movement.update({"type": "movement", "player_id": sender_id})
+    await broadcast_except_sender(sender_id, json.dumps(movement))
+
+@app.websocket("/chat")
+async def websocket_chat_endpoint(websocket: WebSocket):
+    await websocket_handler(websocket, chat_message_handler)
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()    
-    player_id = id(websocket)
-    connected_clients[player_id] = websocket
+    await websocket_handler(websocket, movement_message_handler)
 
-    # Po połączeniu, wysyłamy do gracza listę aktywnych graczy
-    await send_active_players_to_all()
-    await websocket.send_json({"player_id": player_id,"type":"player_id"})
-    try:
-        while True:
-            data = await websocket.receive_text()  # Dodajemy ID gracza do wiadomości
-            movement = json.loads(data)
-            # Przekazywanie wiadomości do wszystkich innych graczy
-            for pid, client in connected_clients.items():
-                if pid != player_id:
-                    movement.update({"type":"movement","player_id": player_id})
-                    await client.send_text(json.dumps(movement))
-    except WebSocketDisconnect:
-        # Gracz się rozłączył - usuwamy go z listy
-        del connected_clients[player_id]
-        await send_active_players_to_all()
-
-
-# Funkcja wysyłająca listę aktywnych graczy do wszystkich klientów
 async def send_active_players_to_all():
-    active_players = list(connected_clients.keys())  # Lista aktywnych graczy (po ID połączenia)
-    # Wysyłamy listę graczy do każdego podłączonego klienta
-    for pid, client in connected_clients.items():
+    active_players = list(connected_clients.keys())
+    for client in connected_clients.values():
         try:
-            # Wysyłamy listę aktywnych graczy w formacie JSON
-            await client.send_text(json.dumps({"active_players": active_players,"type":"active_players"}))
+            await client.send_text(json.dumps({
+                "active_players": active_players,
+                "type": "active_players"
+            }))
         except WebSocketDisconnect:
             continue

@@ -75,6 +75,10 @@ export class Game extends Scene
                         this.start = true;
                     });
                     break;
+                case 'winner':
+                    alert("Wygrałeś!");
+                    this.scene.start('Win');
+                    break;
             }
         };
 

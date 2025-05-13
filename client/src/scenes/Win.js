@@ -1,10 +1,10 @@
 import { Scene } from 'phaser';
 
-export class GameOver extends Scene
+export class Win extends Scene
 {
     constructor ()
     {
-        super('GameOver');
+        super('Win');
     }
 
     create ()
@@ -12,7 +12,7 @@ export class GameOver extends Scene
         this.cameras.main.setBackgroundColor(0x000000);
 
       
-        this.add.text(512, 384, 'Koniec gry \n Kliknij aby rozpocząć ponownie', {
+        this.add.text(512, 384, 'Wygrana!!! \n Kliknij aby rozpocząć ponownie', {
             fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
             stroke: '#000000', strokeThickness: 8,
             align: 'center'

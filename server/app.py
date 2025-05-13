@@ -27,7 +27,7 @@ async def player_ready_handler(sender_id, data):
     print(connected_clients.keys)
 
     # Jeśli mamy trzech graczy, uruchamiamy odliczanie
-    if len(ready_players) == 3:
+    if len(ready_players) == 2:
         print("Trzech graczy gotowych, zaczynamy odliczanie!")
         await start_game_countdown()
 
@@ -38,6 +38,15 @@ async def player_loser_handler(sender_id, data):
     del connected_clients[sender_id]
     print(connected_clients.keys())
     print(ready_players)
+    if len(ready_players) == 1:
+        print(f"Gratulacje! Gracz {ready_players[0]} wygrał grę!")
+
+        # Wyślij wiadomość o zakończeniu gry
+        await broadcast_to_all(json.dumps({
+            "type": "winner",
+            "winner": ready_players[0]
+        }))
+        ready_players.clear()
 
 
 async def send_active_players_to_all():

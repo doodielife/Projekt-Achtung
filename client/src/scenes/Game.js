@@ -78,6 +78,8 @@ export class Game extends Scene
             }
         };
 
+
+
         // Tworzenie obiektu gracza
         const min = 100;
         const max = 700;
@@ -101,16 +103,17 @@ export class Game extends Scene
         const sceneHeight = this.cameras.main.height;
         borderGraphics.strokeRect(0, 0, sceneWidth, sceneHeight);
 
-    this.countdownText = this.add.text(400, 300, '', {
-    fontSize: '64px',
+    this.countdownText = this.add.text(500, 400, '', {
+    fontSize: '128px',
     color: '#ffffff'
     }).setOrigin(0.5);
 
+    this.socket.send(JSON.stringify({
+        type: 'player_ready',
+        player_id: this.player.id
+        }));
 
-    }
-
-
-
+}
 
 
 
@@ -139,6 +142,12 @@ export class Game extends Scene
 
 
 
+    sendDelMessage(){
+        this.socket.send(JSON.stringify({
+            type: 'player_out',
+            player_id: this.player.id
+        }));
+    }
 
 
     checkBoundaries() {
@@ -149,6 +158,8 @@ export class Game extends Scene
         if (this.player.x < 0 || this.player.x > sceneWidth ||
             this.player.y < 0 || this.player.y > sceneHeight) {
             this.trail = []
+            this.sendDelMessage();
+            this.start = false;
             this.scene.start('GameOver');
         }
     }
@@ -217,6 +228,8 @@ export class Game extends Scene
 
             if (distance < 5) {
                 // Kolizja – restart gry
+                this.sendDelMessage();
+                this.start = false;
                 this.scene.start('GameOver');
                 this.trail = [];
             }
@@ -272,6 +285,8 @@ export class Game extends Scene
 
             if (distance < 5) {
                 //Kolizja
+                this.sendDelMessage();
+                this.start = false;
                 this.scene.start('GameOver');
                 this.trail = [];
                 return;

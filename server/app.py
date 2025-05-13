@@ -1,3 +1,5 @@
+from pickle import FALSE
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import json
@@ -13,6 +15,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+ready_players = []
+# Przechowuje aktywnych graczy (połączenia WebSocket)
+connected_clients = {}
+
+
+async def player_ready_handler(sender_id, data):
+    print(f"Gracz {sender_id} jest gotowy.")
+    ready_players.append(sender_id)
+    print(ready_players)
+    print(connected_clients.keys)
+
+    # Jeśli mamy trzech graczy, uruchamiamy odliczanie
+    if len(ready_players) == 3:
+        print("Trzech graczy gotowych, zaczynamy odliczanie!")
+        await start_game_countdown()
+
+
+async def player_loser_handler(sender_id, data):
+    print(f"Gracz {sender_id} odpadł z gry!")
+    ready_players.remove(sender_id)
+    del connected_clients[sender_id]
+    print(connected_clients.keys())
+    print(ready_players)
+
+
 async def send_active_players_to_all():
     active_players = list(connected_clients.keys())
     for client in connected_clients.values():
@@ -24,10 +51,10 @@ async def send_active_players_to_all():
         except WebSocketDisconnect:
             continue
     #gdy jest dokładnie trzecg graczy - odpala odliczanie
-    if len(connected_clients) == 6:
-        print("Mam trzech graczy, Odliczam!")
-        print(active_players)
-        await start_game_countdown()
+    # if len(connected_clients) == 6:
+    #     print("Mam trzech graczy, Odliczam!")
+    #     print(active_players)
+    #     await start_game_countdown()
 
 
 
@@ -53,9 +80,6 @@ async def broadcast_to_all(message):
 
 
 
-
-# Przechowuje aktywnych graczy (połączenia WebSocket)
-connected_clients = {}
 async def websocket_handler(websocket: WebSocket, on_message):
     await websocket.accept()
     player_id = id(websocket)
@@ -66,9 +90,19 @@ async def websocket_handler(websocket: WebSocket, on_message):
     try:
         while True:
             data = await websocket.receive_text()
-            await on_message(player_id, data)
+            data2 = json.loads(data)
+            if data2.get("type")== "player_ready":
+                await player_ready_handler(player_id, data2)
+            elif data2.get("type") == "player_out":
+                await player_loser_handler(player_id, data2)
+            else:
+                await on_message(player_id, data)
+
     except WebSocketDisconnect:
         del connected_clients[player_id]
+        if player_id in ready_players:
+            ready_players.remove(player_id)
+            print(f"Gracz {player_id} został usunięty z listy gotowych.")
         await send_active_players_to_all()
 
 async def broadcast_except_sender(sender_id, message):
@@ -95,4 +129,3 @@ async def websocket_chat_endpoint(websocket: WebSocket):
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket_handler(websocket, movement_message_handler)
-

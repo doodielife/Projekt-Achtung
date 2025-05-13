@@ -1,6 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import json
+import asyncio
 
 app = FastAPI()
 
@@ -11,6 +12,47 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+async def send_active_players_to_all():
+    active_players = list(connected_clients.keys())
+    for client in connected_clients.values():
+        try:
+            await client.send_text(json.dumps({
+                "active_players": active_players,
+                "type": "active_players"
+            }))
+        except WebSocketDisconnect:
+            continue
+    #gdy jest dokładnie trzecg graczy - odpala odliczanie
+    if len(connected_clients) == 6:
+        print("Mam trzech graczy, Odliczam!")
+        print(active_players)
+        await start_game_countdown()
+
+
+
+async def start_game_countdown():
+    for count in [3,2,1]:
+        message = json.dumps({
+            "type": "countdown",
+            "value": count
+        })
+        #print(f"Wysłano {count}")
+        await broadcast_to_all(message)
+        await asyncio.sleep(1)
+
+
+    start_message = json.dumps({
+        "type": "start_game"
+    })
+    await broadcast_to_all(start_message)
+
+async def broadcast_to_all(message):
+    for client in connected_clients.values():
+        await client.send_text(message)
+
+
+
 
 # Przechowuje aktywnych graczy (połączenia WebSocket)
 connected_clients = {}
@@ -43,6 +85,9 @@ async def movement_message_handler(sender_id, data):
     movement.update({"type": "movement", "player_id": sender_id})
     await broadcast_except_sender(sender_id, json.dumps(movement))
 
+
+
+
 @app.websocket("/chat")
 async def websocket_chat_endpoint(websocket: WebSocket):
     await websocket_handler(websocket, chat_message_handler)
@@ -51,13 +96,3 @@ async def websocket_chat_endpoint(websocket: WebSocket):
 async def websocket_endpoint(websocket: WebSocket):
     await websocket_handler(websocket, movement_message_handler)
 
-async def send_active_players_to_all():
-    active_players = list(connected_clients.keys())
-    for client in connected_clients.values():
-        try:
-            await client.send_text(json.dumps({
-                "active_players": active_players,
-                "type": "active_players"
-            }))
-        except WebSocketDisconnect:
-            continue

@@ -8,12 +8,9 @@ export class Game extends Scene
     otherPlayers = [];          // Lista ID innych graczy
     socket;                      // Połączenie WebSocket
     otherPlayersTrails = {};
-    gameIsOn = true;
     start = false;
     countdownText; // tekst odliczania
     countdownStarted = false;
-
-
 
 
 
@@ -22,7 +19,7 @@ export class Game extends Scene
     {
         super('Game');
         this.socket = new WebSocket("ws://localhost:8000/ws"); // Inicjalizacja WebSocket
-         this.otherPlayersTrails = {};  // resetuj
+        this.otherPlayersTrails = {};  // resetuj
         this.trail = [];
         this.otherPlayers = [];
     }
@@ -38,10 +35,6 @@ export class Game extends Scene
         // Ustawienie koloru tła
         this.cameras.main.setBackgroundColor(0x000000);
 
-        // Obsługa kliknięcia myszą – restart gry
-//        this.input.once('pointerdown', () => {
-//            this.scene.start('GameOver');
-//        });
 
         // Obsługa klawiatury – strzałki
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -57,18 +50,30 @@ export class Game extends Scene
             switch (gameState.type) {
                 case 'active_players':
                     // Otrzymano listę aktywnych graczy
-                    console.log("Liczba aktywnych graczy: " + gameState.active_players.length);
+                   // console.log("Liczba aktywnych graczy: " + gameState.active_players.length);
                     this.otherPlayers = gameState.active_players;
                     break;
                 case 'player_id':
                     // Otrzymano unikalne ID gracza
-                    console.log("Twój ID: " + gameState.player_id);
+                  //  console.log("Twój ID: " + gameState.player_id);
                     this.player.id = gameState.player_id;
                     break;
                 case 'movement':
                     // Pozycja innego gracza
-                    console.log(gameState);
+                   // console.log(gameState);
                     this.updateOtherPlayer(gameState);
+                    break;
+                case 'countdown':
+                    //pokazuje licznik
+                    this.countdownText.setText(gameState.value)
+                    break;
+                case 'start_game':
+                    //START
+                    this.countdownText.setText("START!");
+                    this.time.delayedCall(1000, () => {
+                        this.countdownText.setVisible(false);
+                        this.start = true;
+                    });
                     break;
             }
         };
@@ -83,20 +88,11 @@ export class Game extends Scene
 
         this.player = this.add.rectangle(losowaLiczbaX, losowaLiczbaY, 5, 5, 0xff0000);
         this.physics.add.existing(this.player); // Dodanie fizyki
+        this.player.rotation = Phaser.Math.FloatBetween(0, Math.PI * 2);
 
         // Obiekt graficzny do rysowania śladów
         this.graphics = this.add.graphics();
         this.graphics.lineStyle(2, 0xff0000, 1);
-
-        // Tekst z aktualną pozycją gracza
-/*        this.text = this.add.text(512, 38, "Ładowanie pozycji..", {
-            fontFamily: 'Arial Black',
-            fontSize: 38,
-            color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 8,
-            align: 'center'
-        }).setOrigin(0.5);*/
 
         // Rysowanie ramki gry
         const borderGraphics = this.add.graphics();
@@ -123,12 +119,8 @@ export class Game extends Scene
         // Główna pętla gry – wykonuje się co klatkę
         if(this.start){
 
-        // Start odliczania, ale tylko jeśli są 2 gracze
-        this.startCountdownIfReady();
-
         this.handlePlayerControls();                     // Obsługa ruchu gracza (obrót)
         this.updatePlayerMovement();                     // Aktualizacja prędkości gracza
-//        this.updatePositionText();                       // Odświeżenie tekstu z pozycją
         this.addTrailPoint();                            // Dodanie punktu śladu
         this.drawTrail();                                // Rysowanie śladu
         this.checkBoundaries();                          // Sprawdzenie czy gracz wyszedł poza ekran
@@ -140,7 +132,6 @@ export class Game extends Scene
             y: this.player.y,
             player_id: this.player.id
         });
-        this.checkPlayersNumber();
         this.checkPlayerCollisionWithOtherTrails();
 
 
@@ -227,7 +218,6 @@ export class Game extends Scene
             if (distance < 5) {
                 // Kolizja – restart gry
                 this.scene.start('GameOver');
-               // this.gameIsOn = false;
                 this.trail = [];
             }
         }
@@ -248,12 +238,6 @@ export class Game extends Scene
 //        }
 //    }
 
-checkPlayersNumber() {
-    if (this.otherPlayers.length === 2 && !this.countdownStarted) {
-        this.countdownStarted = true;
-        this.startCountdownIfReady();
-    }
-}
 
 
 
@@ -272,24 +256,9 @@ checkPlayersNumber() {
 
             this.otherPlayers.push(data.player_id);
             this.otherPlayersTrails[data.player_id] = [];
-            console.log(`Trail gracza ${data.player_id}:`, this.otherPlayersTrails[data.player_id]);
+         //   console.log(`Trail gracza ${data.player_id}:`, this.otherPlayersTrails[data.player_id]);
         }
     }
-
-
-//
-//    drawOtherPlayersTrails() {
-//        // Funkcja (nieużywana) do rysowania śladów innych graczy
-//        this.otherPlayers.forEach(player => {
-//            this.graphics.lineStyle(5, 0x00ff00, 1);
-//            for (let i = 1; i < player.trail.length; i++) {
-//                this.graphics.lineBetween(
-//                    player.trail[i - 1].x, player.trail[i - 1].y,
-//                    player.trail[i].x, player.trail[i].y
-//                );
-//            }
-//        });
-//    }
 
 
     checkPlayerCollisionWithOtherTrails(){
@@ -304,7 +273,6 @@ checkPlayersNumber() {
             if (distance < 5) {
                 //Kolizja
                 this.scene.start('GameOver');
-                //this.gameIsOn = false;
                 this.trail = [];
                 return;
             }
@@ -315,28 +283,4 @@ checkPlayersNumber() {
 
 
 
-startCountdownIfReady() {
-    if (this.otherPlayers.length === 2) {
-        let countdown = 3;
-
-        this.countdownText.setText(countdown);
-
-        const countdownTimer = this.time.addEvent({
-            delay: 1000,
-            repeat: 2, // 3 sekundy (0, 1, 2)
-            callback: () => {
-                countdown--;
-                if (countdown > 0) {
-                    this.countdownText.setText(countdown);
-                } else {
-                    this.countdownText.setText("START!");
-                    this.time.delayedCall(1000, () => {
-                        this.countdownText.setVisible(false);
-                        this.start = true;
-                    });
-                }
-            }
-        });
-    }
-}
 }

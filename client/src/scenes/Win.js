@@ -11,7 +11,7 @@ export class Win extends Scene
     {
         this.cameras.main.setBackgroundColor(0x000000);
 
-      
+
         this.add.text(512, 384, 'Wygrana!!! \n Kliknij aby rozpocząć ponownie', {
             fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
             stroke: '#000000', strokeThickness: 8,

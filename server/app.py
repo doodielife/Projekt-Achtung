@@ -27,7 +27,7 @@ async def player_ready_handler(sender_id, data):
     print(connected_clients.keys)
 
     # Jeśli mamy trzech graczy, uruchamiamy odliczanie
-    if len(ready_players) == 3:
+    if len(ready_players) == 2:
         print("Trzech graczy gotowych, zaczynamy odliczanie!")
         await start_game_countdown()
 

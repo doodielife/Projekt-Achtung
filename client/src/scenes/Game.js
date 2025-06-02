@@ -87,8 +87,18 @@ export class Game extends Scene
                     //this.reset();
                 break;
                 case 'winner':
+                    if(gameState.place === "first"){
                     alert("Wygrałeś!");
                     this.scene.start('Win');
+                    }
+                    else if(gameState.place === "second"){
+                    alert("Zająłeś drugie miejsce!");
+                    this.scene.start('MainMenu');
+                    }
+                    else{
+                    alert("Zająłeś trzecie miejsce!");
+                    this.scene.start('MainMenu');
+                    }
                     break;
             }
         };

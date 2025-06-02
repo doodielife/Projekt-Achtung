@@ -105,14 +105,34 @@ async def websocket_handler(websocket: WebSocket, on_message):
                 print(przegrani)
                 if przegrani == 2:
                     przegrani = 0
-                    ready_players = []
                     points_list = []
+                    ready_players = []
                     message = json.dumps({"type": "new_game"})
                     await broadcast_to_all(message)
                     for i in points.keys():
                         if points[i] >= 5:
-                            message = json.dumps({"type": "winner"})
+                            for a in connected_clients.keys():
+                                points_list.append(a)
+                            message = json.dumps({"type": "winner", "place": "first"})
                             await connected_clients[i].send_text(message)
+                            points_list.remove(i)
+                            message_sec = json.dumps({"type": "winner", "place": "second"})
+                            message_thr = json.dumps({"type": "winner", "place": "third"})
+                            if points[points_list[0]] > points[points_list[1]]:
+                                await connected_clients[points_list[0]].send_text(message_sec)
+                                await connected_clients[points_list[1]].send_text(message_thr)
+                            elif points[points_list[1]] > points[points_list[0]]:
+                                await connected_clients[points_list[1]].send_text(message_sec)
+                                await connected_clients[points_list[0]].send_text(message_thr)
+                            else:
+                                await connected_clients[points_list[1]].send_text(message_sec)
+                                await connected_clients[points_list[0]].send_text(message_sec)
+
+                    points_list = []
+
+
+
+
 
             else:
                 await on_message(player_id, data)

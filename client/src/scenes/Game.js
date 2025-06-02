@@ -11,6 +11,7 @@ export class Game extends Scene
     start = false;
     countdownText; // tekst odliczania
     countdownStarted = false;
+    points = 0;
 
 
 
@@ -19,9 +20,6 @@ export class Game extends Scene
     {
         super('Game');
         this.socket = new WebSocket("ws://localhost:8000/ws"); // Inicjalizacja WebSocket
-        this.otherPlayersTrails = {};  // resetuj
-        this.trail = [];
-        this.otherPlayers = [];
     }
 
 
@@ -53,10 +51,12 @@ export class Game extends Scene
                    // console.log("Liczba aktywnych graczy: " + gameState.active_players.length);
                     this.otherPlayers = gameState.active_players;
                     break;
-                case 'player_id':
+                case 'player':
                     // Otrzymano unikalne ID gracza
                   //  console.log("Twój ID: " + gameState.player_id);
+                    console.log("Napisz coś ")
                     this.player.id = gameState.player_id;
+                    console.log("Player id: ", this.player.id)
                     break;
                 case 'movement':
                     // Pozycja innego gracza
@@ -65,19 +65,40 @@ export class Game extends Scene
                     break;
                 case 'countdown':
                     //pokazuje licznik
+                    this.countdownText.setVisible(true);
                     this.countdownText.setText(gameState.value)
                     break;
                 case 'start_game':
                     //START
+                    this.trail = [];
+                    for (let playerId in this.otherPlayersTrails) {
+                        this.otherPlayersTrails[playerId] = [];
+                    }
+                    this.graphics.clear(); // wyczyść rysunki graficzne
                     this.countdownText.setText("START!");
                     this.time.delayedCall(1000, () => {
                         this.countdownText.setVisible(false);
                         this.start = true;
                     });
                     break;
+               case 'new_game':
+                    this.start = false;
+                    this.scene.restart();
+                    //this.reset();
+                break;
                 case 'winner':
+                    if(gameState.place === "first"){
                     alert("Wygrałeś!");
                     this.scene.start('Win');
+                    }
+                    else if(gameState.place === "second"){
+                    alert("Zająłeś drugie miejsce!");
+                    this.scene.start('MainMenu');
+                    }
+                    else{
+                    alert("Zająłeś trzecie miejsce!");
+                    this.scene.start('MainMenu');
+                    }
                     break;
             }
         };
@@ -114,7 +135,7 @@ export class Game extends Scene
 
     this.socket.send(JSON.stringify({
         type: 'player_ready',
-        player_id: this.player.id
+     //   player_id: this.player.id
         }));
 
 }
@@ -132,27 +153,29 @@ export class Game extends Scene
         this.drawTrail();                                // Rysowanie śladu
         this.checkBoundaries();                          // Sprawdzenie czy gracz wyszedł poza ekran
         this.checkPlayerCollisionWithOwnTrail();         // Sprawdzenie kolizji ze swoim śladem
+        this.checkPlayerCollisionWithOtherTrails();
 
- }
         this.sendPlayerMovement({                        // Wysłanie pozycji do serwera
             x: this.player.x,
             y: this.player.y,
             player_id: this.player.id
         });
-        this.checkPlayerCollisionWithOtherTrails();
 
-
+        }
     }
 
 
+    reset(){
+        this.start = false;
+        this.trail = [];
+        this.otherPlayersTrails = {};
+        const min = 100;
+        const max = 700;
+        const losowaLiczbaX = Math.floor(Math.random() * (max - min + 1)) + min;
+        const losowaLiczbaY = Math.floor(Math.random() * (max - min + 1)) + min;
 
-    sendDelMessage(){
-        this.socket.send(JSON.stringify({
-            type: 'player_out',
-            player_id: this.player.id
-        }));
+        this.player = this.add.rectangle(losowaLiczbaX, losowaLiczbaY, 5, 5, 0xff0000);
     }
-
 
     checkBoundaries() {
         // Jeżeli gracz wyjdzie poza ekran, restart gry
@@ -161,10 +184,12 @@ export class Game extends Scene
 
         if (this.player.x < 0 || this.player.x > sceneWidth ||
             this.player.y < 0 || this.player.y > sceneHeight) {
-            this.trail = []
-            this.sendDelMessage();
+
+            this.player.body.setVelocity(0, 0);
             this.start = false;
-            this.scene.start('GameOver');
+            console.log("Wysyłam wiadomość LOSS do serwera...");
+            this.socket.send(JSON.stringify({ type: 'loss', }));
+            console.log("Wiadomość LOSS została wysłana.");
         }
     }
 
@@ -231,11 +256,13 @@ export class Game extends Scene
             );
 
             if (distance < 5) {
-                // Kolizja – restart gry
-                this.sendDelMessage();
+
+                this.player.body.setVelocity(0, 0);
                 this.start = false;
-                this.scene.start('GameOver');
-                this.trail = [];
+                console.log("Wysyłam wiadomość LOSS do serwera...");
+                this.socket.send(JSON.stringify({ type: 'loss', }));
+                console.log("Wiadomość LOSS została wysłana.");
+
             }
         }
     }
@@ -248,35 +275,43 @@ export class Game extends Scene
         this.text.text = `${this.player.x.toFixed()} : ${this.player.y.toFixed()}`;
     }
 
-//    checkPlayersNumber(){
-//        //Sprawdzanie ilu jest graczy
-//        if(this.otherPlayers.length === 2){
-//        this.start = true;
+
+
+//    updateOtherPlayer(data) {
+//        // Aktualizacja pozycji innych graczy
+//        const findPlayer = this.otherPlayers.find(p => p === data.player_id);
+//        if (findPlayer) {
+//            // Rysowanie innego gracza na pozycji
+//            this.add.rectangle(data.x, data.y, 5, 5, 0xffa500);
+//            this.otherPlayersTrails[data.player_id].push({ x: data.x, y: data.y });
+//        } else {
+//            // Jeśli nowy gracz – dodaj go
+//            console.log("Nie znalazłem gracza: ", data.player_id);
+//            console.log("Dodaję gracza: ", data.player_id);
+//
+//            this.otherPlayers.push(data.player_id);
+//            this.otherPlayersTrails[data.player_id] = [];
+//         //   console.log(`Trail gracza ${data.player_id}:`, this.otherPlayersTrails[data.player_id]);
 //        }
 //    }
 
 
-
-
-
     updateOtherPlayer(data) {
-        // Aktualizacja pozycji innych graczy
-        const findPlayer = this.otherPlayers.find(p => p === data.player_id);
-        if (findPlayer) {
-            // Rysowanie innego gracza na pozycji
-            this.add.rectangle(data.x, data.y, 5, 5, 0xffa500);
-            this.otherPlayersTrails[data.player_id].push({ x: data.x, y: data.y });
-        } else {
-            // Jeśli nowy gracz – dodaj go
-            console.log("Nie znalazłem gracza: ", data.player_id);
-            console.log("Dodaję gracza: ", data.player_id);
-
-            this.otherPlayers.push(data.player_id);
-            this.otherPlayersTrails[data.player_id] = [];
-         //   console.log(`Trail gracza ${data.player_id}:`, this.otherPlayersTrails[data.player_id]);
-        }
+    // Jeśli gracz nie istnieje, dodaj go
+    if (!this.otherPlayers.includes(data.player_id)) {
+        this.otherPlayers.push(data.player_id);
+        this.otherPlayersTrails[data.player_id] = [];
     }
 
+    // Jeśli gracz istnieje, upewnij się, że jego trail istnieje
+    if (!this.otherPlayersTrails[data.player_id]) {
+        this.otherPlayersTrails[data.player_id] = [];
+    }
+
+    // Rysuj gracza i dodawaj jego ślad tylko jeśli gra trwa
+        this.add.rectangle(data.x, data.y, 5, 5, 0xffa500);
+        this.otherPlayersTrails[data.player_id].push({ x: data.x, y: data.y });
+}
 
     checkPlayerCollisionWithOtherTrails(){
         for (const playerId in this.otherPlayersTrails) {
@@ -288,18 +323,20 @@ export class Game extends Scene
             );
 
             if (distance < 5) {
-                //Kolizja
-                this.sendDelMessage();
+
+                this.player.body.setVelocity(0, 0);
                 this.start = false;
-                this.scene.start('GameOver');
-                this.trail = [];
+                console.log("Wysyłam wiadomość LOSS do serwera...");
+                this.socket.send(JSON.stringify({ type: 'loss', }));
+                console.log("Wiadomość LOSS została wysłana.");
+
+
+              //  this.scene.start('GameOver');
                 return;
             }
         }
     }
     }
-
-
 
 
 }

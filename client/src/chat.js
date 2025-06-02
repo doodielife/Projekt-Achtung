@@ -42,8 +42,8 @@ sendButton.addEventListener('click', () => {
 
 socket.onmessage = (event) => {
     const firstParse = JSON.parse(event.data);
-    const data = JSON.parse(firstParse);
-    //const data = event.data
+    //const data = JSON.parse(firstParse);
+    const data = event.data
    // console.log(data)
     const chatMessages = document.getElementById('chat-messages');
     const newMessage = document.createElement('div');

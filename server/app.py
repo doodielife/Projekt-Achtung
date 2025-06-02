@@ -18,6 +18,10 @@ app.add_middleware(
 ready_players = []
 # Przechowuje aktywnych graczy (połączenia WebSocket)
 connected_clients = {}
+przegrani = 0
+points = {}
+points_list = []
+
 
 
 async def player_ready_handler(sender_id, data):
@@ -27,26 +31,9 @@ async def player_ready_handler(sender_id, data):
     print(connected_clients.keys)
 
     # Jeśli mamy trzech graczy, uruchamiamy odliczanie
-    if len(ready_players) == 2:
+    if len(ready_players) == 3:
         print("Trzech graczy gotowych, zaczynamy odliczanie!")
         await start_game_countdown()
-
-
-async def player_loser_handler(sender_id, data):
-    print(f"Gracz {sender_id} odpadł z gry!")
-    ready_players.remove(sender_id)
-    del connected_clients[sender_id]
-    print(connected_clients.keys())
-    print(ready_players)
-    if len(ready_players) == 1:
-        print(f"Gratulacje! Gracz {ready_players[0]} wygrał grę!")
-
-        # Wyślij wiadomość o zakończeniu gry
-        await broadcast_to_all(json.dumps({
-            "type": "winner",
-            "winner": ready_players[0]
-        }))
-        ready_players.clear()
 
 
 async def send_active_players_to_all():
@@ -59,11 +46,6 @@ async def send_active_players_to_all():
             }))
         except WebSocketDisconnect:
             continue
-    #gdy jest dokładnie trzecg graczy - odpala odliczanie
-    # if len(connected_clients) == 6:
-    #     print("Mam trzech graczy, Odliczam!")
-    #     print(active_players)
-    #     await start_game_countdown()
 
 
 
@@ -93,22 +75,54 @@ async def websocket_handler(websocket: WebSocket, on_message):
     await websocket.accept()
     player_id = id(websocket)
     connected_clients[player_id] = websocket
+    points[player_id] = 0;
+    print("Zarejestrowano gracza:", player_id)
+    print("Aktualni klienci:", connected_clients.keys())
     await send_active_players_to_all()
-    await websocket.send_json({"player_id": player_id, "type": "player_id"})
+    try:
+        await connected_clients[player_id].send_text(json.dumps({"type": "player", "player_id": player_id}))
+        print("Wysłano info do gracza:", player_id)
+    except Exception as e:
+        print(f"Błąd przy wysyłaniu do gracza {player_id}: {e}")
 
     try:
         while True:
             data = await websocket.receive_text()
             data2 = json.loads(data)
+            #print(f"Odebrano dane z klienta: {data2}")
             if data2.get("type")== "player_ready":
+                print(data2)
                 await player_ready_handler(player_id, data2)
-            elif data2.get("type") == "player_out":
-                await player_loser_handler(player_id, data2)
+            elif data2.get("type") == "loss":
+                global przegrani, ready_players, points_list
+
+                points_list.append(player_id)
+                for i in points.keys():
+                    if i not in points_list:
+                        points[i] += 1
+
+                przegrani = przegrani + 1
+                print(przegrani)
+                if przegrani == 2:
+                    przegrani = 0
+                    ready_players = []
+                    points_list = []
+                    message = json.dumps({"type": "new_game"})
+                    await broadcast_to_all(message)
+                    for i in points.keys():
+                        if points[i] >= 5:
+                            message = json.dumps({"type": "winner"})
+                            await connected_clients[i].send_text(message)
+
             else:
                 await on_message(player_id, data)
 
     except WebSocketDisconnect:
         del connected_clients[player_id]
+        if player_id in points:
+            del points[player_id]
+        if player_id in points_list:
+            points_list.remove(player_id)
         if player_id in ready_players:
             ready_players.remove(player_id)
             print(f"Gracz {player_id} został usunięty z listy gotowych.")

@@ -88,10 +88,12 @@ export class Game extends Scene
                 break;
                 case 'winner':
                     if(gameState.place === "first"){
+                    console.log("Wygrałeś")
                     alert("Wygrałeś!");
                     this.scene.start('Win');
                     }
                     else if(gameState.place === "second"){
+                    console.log("Nie wygrałeś")
                     alert("Zająłeś drugie miejsce!");
                     this.scene.start('MainMenu');
                     }

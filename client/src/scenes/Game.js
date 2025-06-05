@@ -83,20 +83,29 @@ export class Game extends Scene
                     break;
                case 'new_game':
                     this.start = false;
+                    for (let playerId in this.otherPlayersTrails) {
+        this.otherPlayersTrails[playerId] = [];
+    }
                     this.scene.restart();
+                    this.graphics.clear();
                     //this.reset();
                 break;
                 case 'winner':
                     if(gameState.place === "first"){
+                    console.log("Wygrałeś")
                     alert("Wygrałeś!");
+                    this.start = false;
                     this.scene.start('Win');
                     }
                     else if(gameState.place === "second"){
+                    console.log("Nie wygrałeś")
                     alert("Zająłeś drugie miejsce!");
+                    this.start = false;
                     this.scene.start('MainMenu');
                     }
                     else{
                     alert("Zająłeś trzecie miejsce!");
+                    this.start = false;
                     this.scene.start('MainMenu');
                     }
                     break;
@@ -128,10 +137,26 @@ export class Game extends Scene
         const sceneHeight = this.cameras.main.height;
         borderGraphics.strokeRect(0, 0, sceneWidth, sceneHeight);
 
+//    this.countdownText = this.add.text(500, 400, '', {
+//    fontSize: '128px',
+//    color: '#ffffff'
+//    }).setOrigin(0.5);
+
     this.countdownText = this.add.text(500, 400, '', {
+    fontFamily: '"Orbitron", sans-serif',
     fontSize: '128px',
-    color: '#ffffff'
-    }).setOrigin(0.5);
+    color: '#ffffff',
+    stroke: '#00ffff',
+    strokeThickness: 6,
+    shadow: {
+        offsetX: 4,
+        offsetY: 4,
+        color: '#000000',
+        blur: 5,
+        fill: true
+    },
+    align: 'center'
+}).setOrigin(0.5);
 
     this.socket.send(JSON.stringify({
         type: 'player_ready',

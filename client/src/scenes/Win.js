@@ -20,7 +20,7 @@ export class Win extends Scene
 
         this.input.once('pointerdown', () => {
 
-            this.scene.start('MainMenu');
+            this.scene.start('Game');
 
         });
     }

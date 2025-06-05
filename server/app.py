@@ -23,7 +23,6 @@ points = {}
 points_list = []
 
 
-
 async def player_ready_handler(sender_id, data):
     print(f"Gracz {sender_id} jest gotowy.")
     ready_players.append(sender_id)
@@ -75,6 +74,7 @@ async def websocket_handler(websocket: WebSocket, on_message, typ):
     player_id = id(websocket)
     if typ == "ws":
         points[player_id] = 0
+
     connected_clients[player_id] = websocket
     print("Zarejestrowano gracza:", player_id)
     print("Aktualni klienci:", connected_clients.keys())
@@ -105,16 +105,16 @@ async def websocket_handler(websocket: WebSocket, on_message, typ):
                 przegrani = przegrani + 1
 
                 if przegrani == 2:
+                    flag = False
                     przegrani = 0
                     points_list = []
                     ready_players = []
-                    message = json.dumps({"type": "new_game"})
-                    await broadcast_to_all(message)
-                    await asyncio.sleep(1)
+
                     for i in points.keys():
                         if points[i] >= 5:
                             for a in points.keys():
                                 points_list.append(a)
+                            flag = True
                             message = json.dumps({"type": "winner", "place": "first"})
                             print(f"wysyłam do {i}")
                             await connected_clients[i].send_text(message)
@@ -137,7 +137,10 @@ async def websocket_handler(websocket: WebSocket, on_message, typ):
                             points_list = []
                             for i in points.keys():
                                 points[i] = 0
-
+                    if flag == False:
+                        message = json.dumps({"type": "new_game"})
+                        await broadcast_to_all(message)
+                        await asyncio.sleep(1)
                     points_list = []
 
 
@@ -182,3 +185,8 @@ async def websocket_chat_endpoint(websocket: WebSocket):
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket_handler(websocket, movement_message_handler, "ws")
+
+
+
+
+

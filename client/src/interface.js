@@ -9,20 +9,18 @@ if (!username) {
 
 const chatContainer = document.getElementById('chat');
 
-chatContainer.innerHTML = `
-            <div class="chat-header" id="username">Wiadomosci</div>
-            <span class="chat-close-btn" id="chat-close"></span>
-            <div class="chat-messages" id="chat-messages"></div>
-            <div class="chat-input-container">
-                <input type="text" id="chat-input" placeholder="Napisz wiadomosc" />
-                <button class="send-button" id="send-button">Wyslij</button>
-            </div>
-            `;
-
+            
+const scoreboardList = document.getElementById('scoreboard-list');
 const sendButton = document.getElementById('send-button');
 const chatInput = document.getElementById('chat-input');
 const chatClose = document.getElementById('chat-close');
 
+
+window.addEventListener('load', () => {
+    console.log("Wyslanie zapytania o tablice wynikow");
+    socket.send(JSON.stringify({ type: 'scoreboard' }))
+
+})
 
 
 
@@ -47,7 +45,6 @@ socket.onerror = (error) => {
 
 socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
-    console.log(data);
     const chatMessages = document.getElementById('chat-messages');
     const newMessage = document.createElement('div');
     newMessage.className = 'chat-message';
@@ -56,6 +53,16 @@ socket.onmessage = (event) => {
     } else if (data.type === 'system') {
         newMessage.textContent = data.message;
         newMessage.classList.add('system-message');
+    } else if (data.type==='scoreboard'){
+
+            scoreboardList.innerHTML = ''; // Clear previous scoreboard
+            Object.entries(data.scores).sort((a, b) => b[1] - a[1]).forEach(([key, value]) => {
+                const scoreItem = document.createElement('li');
+                scoreItem.textContent = `${key}: ${value}`;
+                scoreItem.className = 'scoreboard-item';
+                scoreboardList.appendChild(scoreItem);
+            });
+            return; // Skip appending to chat messages
     }
     chatMessages.appendChild(newMessage);
     chatMessages.scrollTop = chatMessages.scrollHeight;

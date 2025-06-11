@@ -1,3 +1,5 @@
+/* CSS for the login page */
+
 *{
     box-sizing: border-box;
     font-family: poppins, sans-serif;
@@ -113,13 +115,13 @@ input[type="text"]:focus {
     
 }
 
-/* Game css */
+/* Chat css */
 
 .chat-container {
     display: flex;
     position: relative;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     gap: 0.5rem;
     height: 100%;
@@ -129,7 +131,23 @@ input[type="text"]:focus {
     transform: translateX(0%);
     transition: transform 1s ease-in-out;
 }
-
+.chat-window {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    overflow-y: auto; 
+    max-height: 100%;
+}
+.chat-messages{
+    width: 100%;
+    overflow-y: auto;
+    flex: 1;
+    word-break: break-word;
+}
 .chat-closed {
      transform: translateX(85%);
      transition: transform 1s ease-in-out;
@@ -221,4 +239,28 @@ input[type="text"]:focus {
         width: 100%;
     }
     
+}
+
+
+/* Scoreboard css */
+
+.scoreboard{
+    display: flex;;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    height: 100%;
+    list-style: none;
+
+}
+
+
+.scoreboard-list {
+    width: 100%;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 0;
+    margin: 0;
+    text-align:center;
 }

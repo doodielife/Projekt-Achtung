@@ -14,6 +14,21 @@
     <div id="app">
         <div id="game-container"></div>
         <div id="chat" class="chat-container">
+            <div class="scoreboard">
+                <h2 class="scoreboard-title">Tablica wyników</h2>
+                <ul class="scoreboard-list" id="scoreboard-list">
+                </ul>
+            </div>
+
+            <div class="chat-window" id="chat-window">
+                <h2 class="chat-header" id="username">Wiadomosci</h2>
+                <span class="chat-close-btn" id="chat-close"></span>
+                <div class="chat-messages" id="chat-messages"></div>
+                <div class="chat-input-container">
+                    <input type="text" id="chat-input" placeholder="Napisz wiadomosc" />
+                    <button class="send-button" id="send-button">Wyslij</button>
+                </div>
+            </div>
             <div class="chat-box" id="chat-box">
 
             </div>

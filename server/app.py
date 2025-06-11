@@ -101,6 +101,8 @@ async def websocket_handler(websocket: WebSocket, on_message, typ):
                     if i not in points_list:
                         points[i] += 1
                         print(f"{i}: {points[i]}")
+                        message = json.dumps({"type": "scoreboard", "scores": {pid: points[pid] for pid in points.keys()}, "scores": points})
+                        await broadcast_to_all(message)
 
                 przegrani = przegrani + 1
 
@@ -109,7 +111,7 @@ async def websocket_handler(websocket: WebSocket, on_message, typ):
                     przegrani = 0
                     points_list = []
                     ready_players = []
-
+                    
                     for i in points.keys():
                         if points[i] >= 5:
                             for a in points.keys():
@@ -143,6 +145,9 @@ async def websocket_handler(websocket: WebSocket, on_message, typ):
                         await asyncio.sleep(1)
                     points_list = []
 
+            elif data2.get("type") == "scoreboard":
+                message = json.dumps({"type": "scoreboard", "scores": {pid: points[pid] for pid in points.keys()}, "scores": points})
+                await broadcast_to_all(message)
             else:
                 await on_message(player_id, data)
 

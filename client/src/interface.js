@@ -46,10 +46,8 @@ socket.onerror = (error) => {
 }
 
 socket.onmessage = (event) => {
-    const firstParse = JSON.parse(event.data);
-    //const data = JSON.parse(firstParse);
-    const data = event.data
-   // console.log(data)
+    const data = JSON.parse(event.data);
+    console.log(data);
     const chatMessages = document.getElementById('chat-messages');
     const newMessage = document.createElement('div');
     newMessage.className = 'chat-message';
@@ -69,4 +67,4 @@ chatClose.addEventListener('click', () => {
 });
 
 console.log("Poprawnie wczytano interfejs");
-console.log("Nazwa uzytkownika: " + username);
+console.log("Twoja nazwa uzytkownika: " + username);

@@ -164,7 +164,7 @@ async def broadcast_except_sender(sender_id, message):
 
 async def chat_message_handler(sender_id, data):
     print(f"Odebrano wiadomosc {sender_id}: {data}")
-    await broadcast_except_sender(sender_id, json.dumps(data))
+    await broadcast_except_sender(sender_id, data)
 
 async def movement_message_handler(sender_id, data):
     movement = json.loads(data)

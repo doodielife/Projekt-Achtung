@@ -143,10 +143,6 @@ async def websocket_handler(websocket: WebSocket, on_message, typ):
                         await asyncio.sleep(1)
                     points_list = []
 
-
-
-
-
             else:
                 await on_message(player_id, data)
 
@@ -178,9 +174,9 @@ async def movement_message_handler(sender_id, data):
 
 
 
-@app.websocket("/chat")
+@app.websocket("/interface")
 async def websocket_chat_endpoint(websocket: WebSocket):
-    await websocket_handler(websocket, chat_message_handler, "chat")
+    await websocket_handler(websocket, chat_message_handler, "interface")
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

@@ -1,6 +1,6 @@
 const urlParams = new URLSearchParams(window.location.search);
 const username = urlParams.get('username');
-const socket = new WebSocket('ws://localhost:8000/chat');
+const socket = new WebSocket('ws://localhost:8000/interface');
 
 if (!username) {
     alert('Nie podano nazwy uzytkownika! Zostaniesz przekierowany do strony logowania.');
@@ -40,6 +40,11 @@ sendButton.addEventListener('click', () => {
     }
 })
 
+socket.onerror = (error) => {
+    console.error('WebSocket error:', error);
+    alert('Wystapil blad polaczenia z serwerem. Sprobuj ponownie pozniej.');
+}
+
 socket.onmessage = (event) => {
     const firstParse = JSON.parse(event.data);
     //const data = JSON.parse(firstParse);
@@ -63,5 +68,5 @@ chatClose.addEventListener('click', () => {
     chatContainer.classList.toggle('chat-closed');
 });
 
-console.log("Poprawnie wczytano chat.js");
+console.log("Poprawnie wczytano interfejs");
 console.log("Nazwa uzytkownika: " + username);

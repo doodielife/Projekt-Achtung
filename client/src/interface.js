@@ -15,7 +15,7 @@ const chatInput = document.getElementById('chat-input');
 const chatClose = document.getElementById('chat-close');
 
 
-window.addEventListener('load', () => {
+socket.addEventListener('open', () => {
     socket.send(JSON.stringify({ type: 'scoreboard',username: username }));
 
 })

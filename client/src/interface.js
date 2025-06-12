@@ -1,5 +1,4 @@
-const urlParams = new URLSearchParams(window.location.search);
-const username = urlParams.get('username');
+const username = localStorage.getItem('username');
 const socket = new WebSocket('ws://localhost:8000/interface');
 
 if (!username) {
@@ -55,14 +54,14 @@ socket.onmessage = (event) => {
         newMessage.classList.add('system-message');
     } else if (data.type==='scoreboard'){
 
-            scoreboardList.innerHTML = ''; // Clear previous scoreboard
+            scoreboardList.innerHTML = '';
             Object.entries(data.scores).sort((a, b) => b[1] - a[1]).forEach(([key, value]) => {
                 const scoreItem = document.createElement('li');
                 scoreItem.textContent = `${key}: ${value}`;
                 scoreItem.className = 'scoreboard-item';
                 scoreboardList.appendChild(scoreItem);
             });
-            return; // Skip appending to chat messages
+            return;
     }
     chatMessages.appendChild(newMessage);
     chatMessages.scrollTop = chatMessages.scrollHeight;

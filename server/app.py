@@ -22,6 +22,7 @@ przegrani = 0
 points = {}
 points_list = []
 
+connectionToUsername = {}
 
 async def player_ready_handler(sender_id, data):
     print(f"Gracz {sender_id} jest gotowy.")
@@ -69,19 +70,21 @@ async def broadcast_to_all(message):
 
 
 
-async def websocket_handler(websocket: WebSocket, on_message, typ):
+async def websocket_handler(websocket: WebSocket, on_message, typ, username):
     await websocket.accept()
     player_id = id(websocket)
     if typ == "ws":
         points[player_id] = 0
 
     connected_clients[player_id] = websocket
+    connectionToUsername[player_id] = username  # Domyślna nazwa użytkownika
     print("Zarejestrowano gracza:", player_id)
     print("Aktualni klienci:", connected_clients.keys())
     await send_active_players_to_all()
     try:
         await connected_clients[player_id].send_text(json.dumps({"type": "player", "player_id": player_id}))
         print("Wysłano info do gracza:", player_id)
+
     except Exception as e:
         print(f"Błąd przy wysyłaniu do gracza {player_id}: {e}")
 
@@ -146,13 +149,18 @@ async def websocket_handler(websocket: WebSocket, on_message, typ):
                     points_list = []
 
             elif data2.get("type") == "scoreboard":
-                message = json.dumps({"type": "scoreboard", "scores": {pid: points[pid] for pid in points.keys()}, "scores": points})
+                connectionToUsername[player_id] = data2.get("username")
+                message = json.dumps({
+                    "type": "scoreboard",
+                    "scores": {connectionToUsername[player_id]: points[player_id] for player_id in points.keys()}
+                })
                 await broadcast_to_all(message)
             else:
                 await on_message(player_id, data)
 
     except WebSocketDisconnect:
         del connected_clients[player_id]
+        del connectionToUsername[player_id]
         if player_id in points:
             del points[player_id]
         if player_id in points_list:
@@ -180,14 +188,9 @@ async def movement_message_handler(sender_id, data):
 
 
 @app.websocket("/interface")
-async def websocket_chat_endpoint(websocket: WebSocket):
-    await websocket_handler(websocket, chat_message_handler, "interface")
+async def websocket_chat_endpoint(websocket: WebSocket,username:str):
+    await websocket_handler(websocket, chat_message_handler, "interface",username)
 
 @app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket_handler(websocket, movement_message_handler, "ws")
-
-
-
-
-
+async def websocket_endpoint(websocket: WebSocket,username:str):
+    await websocket_handler(websocket, movement_message_handler, "ws",username) 

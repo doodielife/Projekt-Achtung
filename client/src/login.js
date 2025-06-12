@@ -8,7 +8,7 @@ form.addEventListener('submit', (event) => {
         errorMessage.textContent = 'Proszę wprowadzić nazwę gracza.';
         return;
     }
-    localStorage.setItem('username', username);
+    sessionStorage.setItem('username', username);
     window.location.href = './game.html';
 });
 

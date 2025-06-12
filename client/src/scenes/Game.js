@@ -12,14 +12,15 @@ export class Game extends Scene
     countdownText; // tekst odliczania
     countdownStarted = false;
     points = 0;
-
+    username = sessionStorage.getItem('username') || 'Gracz'; // Pobranie nazwy gracza z localStorage lub ustawienie domyślnej
 
 
 
     constructor ()
     {
         super('Game');
-        this.socket = new WebSocket("ws://localhost:8000/ws"); // Inicjalizacja WebSocket
+        this.socket = new WebSocket(`ws://localhost:8000/ws?username=${encodeURIComponent(this.username)}`); // Inicjalizacja WebSocket
+
     }
 
 
@@ -30,6 +31,8 @@ export class Game extends Scene
 
     create ()
     {
+        this.socket.send(JSON.stringify({ type: 'scoreboard',username: this.username }));
+
         // Ustawienie koloru tła
         this.cameras.main.setBackgroundColor(0x000000);
 
@@ -170,6 +173,8 @@ export class Game extends Scene
     update()
     {
         // Główna pętla gry – wykonuje się co klatkę
+        this.socket.send(JSON.stringify({ type: 'scoreboard',username: this.username }));
+
         if(this.start){
 
         this.handlePlayerControls();                     // Obsługa ruchu gracza (obrót)

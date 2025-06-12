@@ -1,5 +1,5 @@
-const username = localStorage.getItem('username');
-const socket = new WebSocket('ws://localhost:8000/interface');
+const username = sessionStorage.getItem('username');
+const socket = new WebSocket(`ws://localhost:8000/interface?username=${encodeURIComponent(username)}`);
 
 if (!username) {
     alert('Nie podano nazwy uzytkownika! Zostaniesz przekierowany do strony logowania.');
@@ -16,8 +16,7 @@ const chatClose = document.getElementById('chat-close');
 
 
 window.addEventListener('load', () => {
-    console.log("Wyslanie zapytania o tablice wynikow");
-    socket.send(JSON.stringify({ type: 'scoreboard' }))
+    socket.send(JSON.stringify({ type: 'scoreboard',username: username }));
 
 })
 
@@ -59,6 +58,9 @@ socket.onmessage = (event) => {
                 const scoreItem = document.createElement('li');
                 scoreItem.textContent = `${key}: ${value}`;
                 scoreItem.className = 'scoreboard-item';
+                if (key === username) {
+                    scoreItem.classList.add('scoreboard-my-score');
+                }
                 scoreboardList.appendChild(scoreItem);
             });
             return;
@@ -73,4 +75,3 @@ chatClose.addEventListener('click', () => {
 });
 
 console.log("Poprawnie wczytano interfejs");
-console.log("Twoja nazwa uzytkownika: " + username);

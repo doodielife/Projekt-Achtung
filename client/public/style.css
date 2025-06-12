@@ -264,3 +264,9 @@ input[type="text"]:focus {
     margin: 0;
     text-align:center;
 }
+
+
+.scoreboard-my-score {
+    color: #00ff87;
+    font-style: italic;
+}

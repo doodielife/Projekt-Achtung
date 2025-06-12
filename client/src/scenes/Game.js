@@ -68,6 +68,7 @@ export class Game extends Scene
                     break;
                 case 'countdown':
                     //pokazuje licznik
+                    this.graphics.clear();
                     this.countdownText.setVisible(true);
                     this.countdownText.setText(gameState.value)
                     break;
@@ -85,30 +86,49 @@ export class Game extends Scene
                     });
                     break;
                case 'new_game':
+                    this.player.body.setVelocity(0, 0);
                     this.start = false;
                     for (let playerId in this.otherPlayersTrails) {
-        this.otherPlayersTrails[playerId] = [];
-    }
-                    this.scene.restart();
+                        this.otherPlayersTrails[playerId] = [];
+                    }
                     this.graphics.clear();
-                    //this.reset();
+                    this.scene.restart();
+                    for (let playerId in this.otherPlayersTrails) {
+                        this.otherPlayersTrails[playerId] = [];
+                      }
                 break;
                 case 'winner':
                     if(gameState.place === "first"){
                     console.log("Wygrałeś")
-                    alert("Wygrałeś!");
                     this.start = false;
+                    this.player.body.setVelocity(0, 0);
+                    this.trail = [];
+                    alert("Wygrałeś!");
+                    for (let playerId in this.otherPlayersTrails) {
+                        this.otherPlayersTrails[playerId] = [];
+                      }
                     this.scene.start('Win');
+
                     }
                     else if(gameState.place === "second"){
                     console.log("Nie wygrałeś")
-                    alert("Zająłeś drugie miejsce!");
                     this.start = false;
+                    this.player.body.setVelocity(0, 0);
+                    this.trail = [];
+                    alert("Zająłeś drugie miejsce!");
+                    for (let playerId in this.otherPlayersTrails) {
+                        this.otherPlayersTrails[playerId] = [];
+                      }
                     this.scene.start('MainMenu');
                     }
                     else{
-                    alert("Zająłeś trzecie miejsce!");
                     this.start = false;
+                    this.player.body.setVelocity(0, 0);
+                    this.trail = [];
+                    alert("Zająłeś trzecie miejsce!");
+                    for (let playerId in this.otherPlayersTrails) {
+                        this.otherPlayersTrails[playerId] = [];
+                      }
                     this.scene.start('MainMenu');
                     }
                     break;
@@ -140,10 +160,6 @@ export class Game extends Scene
         const sceneHeight = this.cameras.main.height;
         borderGraphics.strokeRect(0, 0, sceneWidth, sceneHeight);
 
-//    this.countdownText = this.add.text(500, 400, '', {
-//    fontSize: '128px',
-//    color: '#ffffff'
-//    }).setOrigin(0.5);
 
     this.countdownText = this.add.text(500, 400, '', {
     fontFamily: '"Orbitron", sans-serif',
@@ -220,6 +236,7 @@ export class Game extends Scene
             console.log("Wysyłam wiadomość LOSS do serwera...");
             this.socket.send(JSON.stringify({ type: 'loss', }));
             console.log("Wiadomość LOSS została wysłana.");
+            this.trail = [];
         }
     }
 
@@ -292,6 +309,7 @@ export class Game extends Scene
                 console.log("Wysyłam wiadomość LOSS do serwera...");
                 this.socket.send(JSON.stringify({ type: 'loss', }));
                 console.log("Wiadomość LOSS została wysłana.");
+                this.trail = [];
 
             }
         }
@@ -306,24 +324,6 @@ export class Game extends Scene
     }
 
 
-
-//    updateOtherPlayer(data) {
-//        // Aktualizacja pozycji innych graczy
-//        const findPlayer = this.otherPlayers.find(p => p === data.player_id);
-//        if (findPlayer) {
-//            // Rysowanie innego gracza na pozycji
-//            this.add.rectangle(data.x, data.y, 5, 5, 0xffa500);
-//            this.otherPlayersTrails[data.player_id].push({ x: data.x, y: data.y });
-//        } else {
-//            // Jeśli nowy gracz – dodaj go
-//            console.log("Nie znalazłem gracza: ", data.player_id);
-//            console.log("Dodaję gracza: ", data.player_id);
-//
-//            this.otherPlayers.push(data.player_id);
-//            this.otherPlayersTrails[data.player_id] = [];
-//         //   console.log(`Trail gracza ${data.player_id}:`, this.otherPlayersTrails[data.player_id]);
-//        }
-//    }
 
 
     updateOtherPlayer(data) {
@@ -359,6 +359,7 @@ export class Game extends Scene
                 console.log("Wysyłam wiadomość LOSS do serwera...");
                 this.socket.send(JSON.stringify({ type: 'loss', }));
                 console.log("Wiadomość LOSS została wysłana.");
+                this.trail = [];
 
 
               //  this.scene.start('GameOver');

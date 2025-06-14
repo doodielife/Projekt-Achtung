@@ -22,17 +22,20 @@ connected_clients_chat = {}
 przegrani = 0
 points = {}
 points_list = []
+game_start = False
 
 connectionToUsername = {}
 
 async def player_ready_handler(sender_id, data):
+    global game_start
     print(f"Gracz {sender_id} jest gotowy.")
     ready_players.append(sender_id)
     print(ready_players)
 
     # Jeśli mamy trzech graczy, uruchamiamy odliczanie
-    if len(ready_players) == 3:
+    if len(ready_players) == 3 or game_start == True:
         print("Trzech graczy gotowych, zaczynamy odliczanie!")
+        game_start = True
         await start_game_countdown()
 
 
@@ -123,7 +126,7 @@ async def websocket_handler(websocket: WebSocket, on_message, typ, username):
 
                     przegrani = przegrani + 1
 
-                    if przegrani == 2:
+                    if przegrani == len(ready_players)-1:
                         flag = False
                         przegrani = 0
                         points_list = []
@@ -135,23 +138,39 @@ async def websocket_handler(websocket: WebSocket, on_message, typ, username):
                                     points_list.append(a)
                                 flag = True
                                 message = json.dumps({"type": "winner", "place": "first"})
-                                print(f"wysyłam do {i}")
+                                #print(f"wysyłam do {i}")
                                 await connected_clients[i].send_text(message)
                                 await asyncio.sleep(1)
-                                print(f"Usuwam {i}")
-                                points_list.remove(i)
-                                print(f"Lista: {points_list}")
-                                message_sec = json.dumps({"type": "winner", "place": "second"})
-                                message_thr = json.dumps({"type": "winner", "place": "third"})
-                                if points[points_list[0]] > points[points_list[1]]:
-                                    await connected_clients[points_list[0]].send_text(message_sec)
-                                    await connected_clients[points_list[1]].send_text(message_thr)
-                                elif points[points_list[1]] > points[points_list[0]]:
-                                    await connected_clients[points_list[1]].send_text(message_sec)
-                                    await connected_clients[points_list[0]].send_text(message_thr)
-                                else:
-                                    await connected_clients[points_list[1]].send_text(message_sec)
-                                    await connected_clients[points_list[0]].send_text(message_sec)
+                                # print(f"Usuwam {i}")
+                                #points_list.remove(i)
+                                # print(f"Lista: {points_list}")
+                                global game_start
+                                game_start = False
+                                # message_sec = json.dumps({"type": "winner", "place": "second"})
+                                # message_thr = json.dumps({"type": "winner", "place": "third"})
+                                # if points[points_list[0]] > points[points_list[1]]:
+                                #     await connected_clients[points_list[0]].send_text(message_sec)
+                                #     await connected_clients[points_list[1]].send_text(message_thr)
+                                # elif points[points_list[1]] > points[points_list[0]]:
+                                #     await connected_clients[points_list[1]].send_text(message_sec)
+                                #     await connected_clients[points_list[0]].send_text(message_thr)
+                                # else:
+                                #     await connected_clients[points_list[1]].send_text(message_sec)
+                                #     await connected_clients[points_list[0]].send_text(message_sec)
+
+                                # Sortujemy graczy według liczby punktów malejąco
+                                sorted_players = sorted(points_list, key=lambda pid: points[pid], reverse=True)
+
+                                # Pierwszy gracz jest zwycięzcą – pomijamy go
+                                for idx, player_id in enumerate(sorted_players[1:], start=2):
+                                    place_name = (
+                                        "second" if idx == 2 else
+                                        "third" if idx == 3 else
+                                        f"{idx}th"
+                                    )
+                                    message = json.dumps({"type": "winner", "place": place_name})
+                                    await connected_clients[player_id].send_text(message)
+
                                 ready_players = []
                                 points_list = []
                                 for i in points.keys():

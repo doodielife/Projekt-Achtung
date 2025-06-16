@@ -13,6 +13,8 @@ export class Game extends Scene
     countdownStarted = false;
     points = 0;
     username = sessionStorage.getItem('username') || 'Gracz'; // Pobranie nazwy gracza z localStorage lub ustawienie domyślnej
+    playerId = null;
+
 
 
 
@@ -54,12 +56,19 @@ export class Game extends Scene
                    // console.log("Liczba aktywnych graczy: " + gameState.active_players.length);
                     this.otherPlayers = gameState.active_players;
                     break;
+//                case 'player':
+//                    // Otrzymano unikalne ID gracza
+//                  //  console.log("Twój ID: " + gameState.player_id);
+//                    console.log("Napisz coś ")
+//                    this.player.id = gameState.player_id;
+//                    console.log("Player id: ", this.player.id)
+//                    break;
                 case 'player':
-                    // Otrzymano unikalne ID gracza
-                  //  console.log("Twój ID: " + gameState.player_id);
-                    console.log("Napisz coś ")
-                    this.player.id = gameState.player_id;
-                    console.log("Player id: ", this.player.id)
+                    console.log("Odebrano ID gracza:", gameState.player_id);
+                    this.playerId = gameState.player_id; // Zapisz ID tymczasowo
+                    if (this.player) {
+                        this.player.id = gameState.player_id;
+                    }
                     break;
                 case 'movement':
                     // Pozycja innego gracza
@@ -148,6 +157,10 @@ export class Game extends Scene
         this.player = this.add.rectangle(losowaLiczbaX, losowaLiczbaY, 5, 5, 0xff0000);
         this.physics.add.existing(this.player); // Dodanie fizyki
         this.player.rotation = Phaser.Math.FloatBetween(0, Math.PI * 2);
+
+        if (this.playerId) {
+           this.player.id = this.playerId;
+        }
 
         // Obiekt graficzny do rysowania śladów
         this.graphics = this.add.graphics();

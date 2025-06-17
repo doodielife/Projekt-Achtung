@@ -13,6 +13,7 @@ export class Game extends Scene
     countdownStarted = false;
     points = 0;
     username = sessionStorage.getItem('username') || 'Gracz'; // Pobranie nazwy gracza z localStorage lub ustawienie domyślnej
+    lets_go = false;
 
 
 
@@ -64,7 +65,9 @@ export class Game extends Scene
                 case 'movement':
                     // Pozycja innego gracza
                    // console.log(gameState);
+                   if(this.lets_go === true){
                     this.updateOtherPlayer(gameState);
+                    }
                     break;
                 case 'countdown':
                     //pokazuje licznik
@@ -84,10 +87,12 @@ export class Game extends Scene
                         this.countdownText.setVisible(false);
                         this.start = true;
                     });
+                    this.lets_go = true;
                     break;
                case 'new_game':
                     this.player.body.setVelocity(0, 0);
                     this.start = false;
+                    this.lets_go = false;
                     for (let playerId in this.otherPlayersTrails) {
                         this.otherPlayersTrails[playerId] = [];
                     }
@@ -101,6 +106,7 @@ export class Game extends Scene
                     if(gameState.place === "first"){
                     console.log("Wygrałeś")
                     this.start = false;
+                    this.lets_go = false;
                     this.player.body.setVelocity(0, 0);
                     this.trail = [];
                     alert("Wygrałeś!");
@@ -113,6 +119,7 @@ export class Game extends Scene
                     else if(gameState.place === "second"){
                     console.log("Nie wygrałeś")
                     this.start = false;
+                    this.lets_go = false;
                     this.player.body.setVelocity(0, 0);
                     this.trail = [];
                     alert("Zająłeś drugie miejsce!");
@@ -123,6 +130,7 @@ export class Game extends Scene
                     }
                     else{
                     this.start = false;
+                    this.lets_go = false;
                     this.player.body.setVelocity(0, 0);
                     this.trail = [];
                     alert("Zająłeś trzecie miejsce!");
@@ -152,7 +160,6 @@ export class Game extends Scene
         // Obiekt graficzny do rysowania śladów
         this.graphics = this.add.graphics();
         this.graphics.lineStyle(2, 0xff0000, 1);
-
         // Rysowanie ramki gry
         const borderGraphics = this.add.graphics();
         borderGraphics.lineStyle(2, 0xffffff, 1);

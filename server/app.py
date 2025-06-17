@@ -154,7 +154,6 @@ async def websocket_handler(websocket: WebSocket, on_message, typ, username):
                     points_list = []
 
                 if len(connected_clients) / 2 == 2 and przegrani == 1:
-                    game_start = False
                     flag = False
                     przegrani = 0
                     points_list = []
@@ -165,6 +164,7 @@ async def websocket_handler(websocket: WebSocket, on_message, typ, username):
                             for a in points.keys():
                                 points_list.append(a)
                             flag = True
+                            game_start = False
                             message = json.dumps({"type": "winner", "place": "first"})
                             print(f"wysyłam do {i}")
                             await connected_clients[i].send_text(message)
@@ -173,7 +173,7 @@ async def websocket_handler(websocket: WebSocket, on_message, typ, username):
                             points_list.remove(i)
                             print(f"Lista: {points_list}")
                             message_sec = json.dumps({"type": "winner", "place": "second"})
-                            await connected_clients[points_list[1]].send_text(message_sec)
+                            await connected_clients[points_list[0]].send_text(message_sec)
                             ready_players = []
                             points_list = []
                             for i in points.keys():

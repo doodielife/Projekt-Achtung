@@ -64,7 +64,9 @@ export class Game extends Scene
                 case 'movement':
                     // Pozycja innego gracza
                    // console.log(gameState);
+                   if(this.start === true){
                     this.updateOtherPlayer(gameState);
+                    }
                     break;
                 case 'countdown':
                     //pokazuje licznik
@@ -152,7 +154,6 @@ export class Game extends Scene
         // Obiekt graficzny do rysowania śladów
         this.graphics = this.add.graphics();
         this.graphics.lineStyle(2, 0xff0000, 1);
-
         // Rysowanie ramki gry
         const borderGraphics = this.add.graphics();
         borderGraphics.lineStyle(2, 0xffffff, 1);

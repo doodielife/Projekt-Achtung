@@ -220,6 +220,7 @@ export class Game extends Scene
             player_id: this.player.id
         });
 
+        this.socket.send(JSON.stringify({ type: 'scoreboard',username: this.username }));
         }
     }
 

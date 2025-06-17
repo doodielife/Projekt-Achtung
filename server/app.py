@@ -83,7 +83,6 @@ async def websocket_handler(websocket: WebSocket, on_message, typ, username):
 
     if typ == "interface":
         connected_clients_chat[player_id] = websocket
-        connectionToUsername[player_id] = username
         while True:
             try:
                 data = await websocket.receive_text()
@@ -138,14 +137,11 @@ async def websocket_handler(websocket: WebSocket, on_message, typ, username):
                                 for a in points.keys():
                                     points_list.append(a)
                                 flag = True
-                                message = json.dumps({"type": "winner", "place": "first"})
-                                #print(f"wysyłam do {i}")
-                                await connected_clients[i].send_text(message)
-                                await asyncio.sleep(1)
-
                                 global game_start
                                 game_start = False
-
+                                message_win = json.dumps({"type": "winner", "place": "first"})
+                                await connected_clients[i].send_text(message_win)
+                                # await asyncio.sleep(1)
                                 # Sortujemy graczy według liczby punktów malejąco
                                 sorted_players = sorted(points_list, key=lambda pid: points[pid], reverse=True)
 

@@ -83,6 +83,7 @@ async def websocket_handler(websocket: WebSocket, on_message, typ, username):
 
     if typ == "interface":
         connected_clients_chat[player_id] = websocket
+        connectionToUsername[player_id] = username
         while True:
             try:
                 data = await websocket.receive_text()
@@ -141,22 +142,9 @@ async def websocket_handler(websocket: WebSocket, on_message, typ, username):
                                 #print(f"wysyłam do {i}")
                                 await connected_clients[i].send_text(message)
                                 await asyncio.sleep(1)
-                                # print(f"Usuwam {i}")
-                                #points_list.remove(i)
-                                # print(f"Lista: {points_list}")
+
                                 global game_start
                                 game_start = False
-                                # message_sec = json.dumps({"type": "winner", "place": "second"})
-                                # message_thr = json.dumps({"type": "winner", "place": "third"})
-                                # if points[points_list[0]] > points[points_list[1]]:
-                                #     await connected_clients[points_list[0]].send_text(message_sec)
-                                #     await connected_clients[points_list[1]].send_text(message_thr)
-                                # elif points[points_list[1]] > points[points_list[0]]:
-                                #     await connected_clients[points_list[1]].send_text(message_sec)
-                                #     await connected_clients[points_list[0]].send_text(message_thr)
-                                # else:
-                                #     await connected_clients[points_list[1]].send_text(message_sec)
-                                #     await connected_clients[points_list[0]].send_text(message_sec)
 
                                 # Sortujemy graczy według liczby punktów malejąco
                                 sorted_players = sorted(points_list, key=lambda pid: points[pid], reverse=True)
@@ -215,7 +203,7 @@ async def broadcast_except_sender_chat(sender_id, message):
 
 async def chat_message_handler(sender_id, data):
     print(f"Odebrano wiadomosc {sender_id}: {data}")
-    await broadcast_except_sender(sender_id, data)
+    await broadcast_except_sender_chat(sender_id, data)
 
 async def movement_message_handler(sender_id, data):
     movement = json.loads(data)

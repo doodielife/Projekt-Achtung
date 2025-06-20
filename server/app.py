@@ -136,6 +136,17 @@ async def handle_loss(player_id, room_id):
         await handle_winner_logic(room_id)
     elif len(room['players']) == 2 and room['losers'] == 1:
         await handle_winner_logic(room_id)
+    elif len(room['players']) == 1:
+        room['game_on'] = False
+        room['game_start'] = False
+        room['losers'] = 0
+        room['ready_players'] = []
+        room['points_list'] = []
+
+        # Wyzeruj punkty gracza
+        for pid in room['points']:
+            room['points'][pid] = 0
+        await handle_winner_logic(room_id)
 
 def sort_points(points_dict):
     return sorted(points_dict.items(), key=lambda x: -x[1])

@@ -18,7 +18,7 @@ connectionToUsername = {}
 
 def find_or_create_room():
     for room_id, room in rooms.items():
-        if len(room['players']) < 3:
+        if len(room['players']) < 3 and not room['game_on']:
             return room_id
     room_id = f"room_{len(rooms)+1}"
     rooms[room_id] = {
@@ -28,7 +28,8 @@ def find_or_create_room():
         'ready_players': [],
         'game_start': False,
         'losers': 0,
-        'points_list': []
+        'points_list': [],
+        'game_on':  False
     }
     return room_id
 
@@ -58,11 +59,13 @@ async def player_ready_handler(player_id, room_id):
             room['game_start'] = True
 
 async def start_game_countdown(room_id):
+    room = rooms[room_id]
     for count in [3, 2, 1]:
         message = json.dumps({"type": "countdown", "value": count})
         await broadcast_to_all(room_id, message)
         await asyncio.sleep(1)
     await broadcast_to_all(room_id, json.dumps({"type": "start_game"}))
+    room['game_on'] = True
 
 async def websocket_handler(websocket: WebSocket, on_message, typ, username):
     await websocket.accept()
@@ -169,6 +172,7 @@ async def handle_winner_logic(room_id):
                 room['points'][pid] = 0
             room['points_list'] = []
             room['game_start'] = False
+            room['game_on'] = False
             return
 
     if not flag:
